@@ -146,13 +146,6 @@ table.pool-t { border-collapse: collapse; width: 100%; table-layout: fixed; }
 .lineup .foot .msg { flex: 1; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lineup .foot .msg.bad { color: var(--red-text); }
 .lineup .foot .msg.ok { color: var(--green-text); }
-.saved { padding: 0 10px 8px; display: flex; flex-wrap: wrap; gap: 6px; }
-.saved:empty { display: none; }
-.saved .sv { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 4px 0 9px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); font-size: 12px; cursor: pointer; }
-.saved .sv:hover { border-color: var(--muted); }
-.saved .sv b { color: var(--text); font-weight: 600; }
-.saved .sv .del { width: 16px; height: 16px; border-radius: 50%; border: 0; background: transparent; color: var(--dim); padding: 0; font-size: 11px; line-height: 16px; }
-.saved .sv .del:hover { color: var(--red-text); }
 
 /* ---------- gauges ---------- */
 .gauges { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-top: 10px; }
@@ -247,7 +240,6 @@ table.t { border-collapse: collapse; width: 100%; }
 @keyframes pop { 0% { transform: scale(.85); opacity: .4 } 100% { transform: scale(1); opacity: 1 } }
 .slot .x { opacity: 0; transition: opacity .15s; }
 .slot:hover .x, .slot.sel .x { opacity: 1; }
-.saved .sv.on { border-color: var(--blue); }
 .hdr .line.bad, .progress .txt.bad { color: var(--red-text); }
 
 /* ---------- theme toggle ---------- */
@@ -388,7 +380,6 @@ select.btn { padding: 0 6px; }
 .split .sp { display: flex; align-items: center; justify-content: center; white-space: nowrap; min-width: 0; }
 .split .sp.BUF { background: var(--buf); box-shadow: inset 0 -3px 0 var(--buf-2); } .split .sp.LAR { background: var(--lar); box-shadow: inset 0 -3px 0 var(--lar-2); }
 .split .sp.none { flex: 1; color: var(--dim); font-weight: 500; }
-.saved .svh { display: inline-flex; gap: 6px; align-items: center; font-size: 11px; color: var(--dim); }
 /* takeaways */
 .takeaways { margin-top: 10px; }
 .takeaways ul { list-style: none; margin: 0; padding: 6px 12px 8px; }
@@ -596,6 +587,92 @@ select.btn { padding: 0 6px; }
   .pool-t .med, .pool-t col.med { display: none; }
 }
 .pool-t th:not(:first-child) { padding: 0 3px; }
+
+/* ---------- Build | Saved lineups switch and the Saved view (D17) ---------- */
+#toast { width: max-content; max-width: calc(100vw - 32px); }
+.salary .perspot { color: var(--dim); font-size: 12px; font-weight: 500; }
+.vtabs { display: flex; gap: 8px; margin: 2px 0 12px; border-bottom: 1px solid var(--border); }
+.vtabs button { height: 40px; padding: 0 18px; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--muted); font-size: 15px; font-weight: 700; letter-spacing: .2px; margin-bottom: -1px; }
+.vtabs button:hover { color: var(--text); }
+.vtabs button.on { color: var(--text); border-bottom-color: var(--gold); }
+.vtabs #saved-count { color: var(--gold); font-weight: 600; }
+.btn.danger { background: var(--red); border-color: var(--red); color: #fff; }
+.svnote { padding: 8px 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--red); background: rgba(178,58,58,.12); font-size: 13px; }
+.svempty { padding: 18px 14px; color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+/* filter bar: one compact line at the top (wraps only when the chips really need it) */
+.svfilter { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-bottom: 8px; font-size: 12px; }
+.svfilter .btn.sm { height: 20px; padding: 0 6px; font-size: 11px; }
+.svchip { display: inline-flex; align-items: center; height: 20px; border-radius: 10px; background: var(--blue); color: #fff; font-size: 11px; font-weight: 600; overflow: hidden; max-width: 100%; }
+.svrole { height: 100%; padding: 0 6px; border: 0; background: rgba(0,0,0,.25); color: #fff; font-size: 9px; font-weight: 800; letter-spacing: .5px; }
+.svrole.CPT { background: var(--gold); color: #1a1400; } .svrole:hover { filter: brightness(1.15); }
+.svcn { padding: 0 1px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.svx { height: 100%; padding: 0 7px 0 4px; border: 0; background: none; color: #fff; font-size: 13px; }
+.svpick.n { font-weight: 600; text-align: right; }
+/* compact card grid: ~4 across at 1280, 2 across on a phone; the exposure table sits below, beside only from 1600px */
+.svlayout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.svgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(265px, 1fr)); gap: 10px; align-items: stretch; }
+.svexp { max-width: 640px; }
+@media (min-width: 1600px) {
+  .svlayout { grid-template-columns: minmax(0, 1fr) 420px; }
+  .svexp { position: sticky; top: 8px; max-width: none; }
+  .svlayout.one { grid-template-columns: 300px 420px; justify-content: start; }
+  .svlayout.one .svgrid { grid-template-columns: minmax(0, 1fr); }
+}
+.svcard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 7px 8px 8px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.svcard.on { border-color: var(--blue); }
+.svcard.focus { animation: flash 1.6s ease-out; }
+.svhead { display: flex; align-items: center; gap: 6px; min-width: 0; min-height: 22px; }
+.svnum { flex: none; font-weight: 800; color: var(--gold); font-size: 14px; }
+.svname { flex: 0 1 auto; min-width: 0; background: none; border: 0; padding: 0; font-weight: 700; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-bottom: 1px dashed transparent; }
+.svname:hover { border-bottom-color: var(--muted); }
+.svtime { font-size: 11px; color: var(--dim); margin-top: -4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.svren { display: flex; gap: 3px; flex: 1; min-width: 0; }
+.svren input { flex: 1; min-width: 0; height: 22px; padding: 0 5px; border-radius: 5px; border: 1px solid var(--blue); background: var(--surface-2); color: var(--text); font-size: 12px; }
+.svren .btn.sm { height: 22px; padding: 0 6px; flex: none; }
+.svrows { display: flex; flex-direction: column; gap: 2px; }
+.svrow { display: grid; grid-template-columns: 30px 6px minmax(0, 1fr) auto auto; align-items: center; gap: 5px; height: 22px; padding: 0 5px; border-radius: 4px; background: var(--surface-2); }
+.svrow.cpt { background: linear-gradient(90deg, rgba(240,180,41,.20), var(--surface-2) 75%); }
+.svlab { font-size: 9px; font-weight: 800; letter-spacing: .4px; color: var(--muted); }
+.svrow.cpt .svlab, .svrow.cpt .svsal { color: var(--gold); }
+.svdot { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); }
+.svdot.BUF { background: var(--buf-t); } .svdot.LAR { background: var(--lar-t); }
+.svteam { font-size: 10px; font-weight: 700; color: var(--dim); }
+.svrow.gone .svpick { color: var(--dim); text-decoration: line-through; }
+.svsal { font-weight: 600; font-size: 12px; text-align: right; min-width: 50px; }
+.svpick { background: none; border: 0; padding: 0; color: var(--text); font-weight: 600; font-size: 12px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; min-width: 0; }
+.svpick:hover { color: var(--blue); text-decoration: underline; }
+.svpick.on { color: var(--gold); }
+.svtot { display: flex; gap: 5px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.svtot b { color: var(--text); }
+.svstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.svstat { display: flex; flex-direction: column; align-items: center; padding: 2px 0 3px; border-radius: 5px; background: var(--surface-2); border: 1px solid var(--border); min-width: 0; }
+.svstat b { font-size: 13px; line-height: 1.2; white-space: nowrap; } .svstat i { font-style: normal; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; }
+.svwait { font-size: 10px; font-weight: 500; color: var(--muted); font-style: italic; }
+.svunscored { grid-column: 1 / -1; padding: 5px 6px; border-radius: 5px; background: var(--surface-2); border: 1px dashed var(--border); color: var(--dim); font-size: 11px; text-align: center; line-height: 1.25; }
+.svacts { display: flex; align-items: center; gap: 5px; margin-top: auto; min-height: 22px; }
+.svacts .spacer { flex: 1; }
+.svacts .btn.sm { height: 22px; padding: 0 8px; font-size: 11px; }
+.svin { font-size: 10px; color: var(--blue); white-space: nowrap; }
+.svconfirm { font-size: 12px; color: var(--red-text); font-weight: 700; white-space: nowrap; }
+.svexp-t { width: 100%; border-collapse: collapse; font-size: 13px; }
+.svexp-t th, .svexp-t td { padding: 4px 6px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+.svexp-t th { color: var(--muted); font-size: 11px; font-weight: 600; }
+.svexp-t th.sort { cursor: pointer; user-select: none; }
+.svexp-t th.sort:hover, .svexp-t th.sort.on { color: var(--text); }
+.svexp-t .l { text-align: left; white-space: normal; }
+.svexp-t td.l .svpick { white-space: normal; }
+@media (max-width: 760px) {
+  .vtabs button { flex: 1; padding: 0 8px; font-size: 14px; }
+  .svgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .svcard { padding: 6px 6px 7px; }
+  .svrow { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 4px; padding: 0 4px; }
+  .svrow .svdot, .svrow .svteam { display: none; }
+  .svrow { border-left: 2px solid transparent; } .svrow.BUF { border-left-color: var(--buf-t); } .svrow.LAR { border-left-color: var(--lar-t); } .svrow.cpt { border-left-color: var(--gold); }
+  .svsal { min-width: 0; font-size: 11px; }
+  .svstat b { font-size: 12px; }
+  .svexp-t th, .svexp-t td { padding: 4px 3px; font-size: 12px; }
+}
+@media (max-width: 340px) { .svgrid { grid-template-columns: minmax(0, 1fr); } }
 
 </style>
 </head>
@@ -1671,8 +1748,13 @@ function evaluateRow(fs, payout, scoreRow, { winShare = null, expectedCopies = 0
   }
   const fee = payout.fee;
   const labels = ['first place', 'top 0.1%', 'top 1%', 'other cashes'];
+  // D18: the headline return leaves out first place (band 0, tied-first shares included): one
+  // simulated first-place win moves full ROI by ~100 points in a 118,900 contest, so it is noise.
+  const firstEquity = bands[0] / sims;
   return {
     roi: fee > 0 ? (winnings / sims - fee) / fee : 0,
+    roiExFirst: fee > 0 ? (winnings / sims - firstEquity - fee) / fee : 0,
+    firstEquity,
     expectedWinnings: winnings / sims,
     breakdown: labels.map((label, k) => ({ label, equity: bands[k] / sims })),
     splitLoss: (unshared - winnings) / sims,
@@ -1713,7 +1795,7 @@ function fieldEntryStats(sim, fs, payoutSpec, maxBlocks = Infinity) {
   const useBlocks = Math.min(blocks, maxBlocks);
   const sims = Math.min(sim.sims, useBlocks * resampleEvery);
   const total = useBlocks * M;
-  const winnings = new Float64Array(total), first = new Float64Array(total), cnt = new Int32Array(total);
+  const winnings = new Float64Array(total), first = new Float64Array(total), firstW = new Float64Array(total), cnt = new Int32Array(total);
   for (let s = 0; s < sims; s++) {
     const blk = Math.floor(s / resampleEvery), base = blk * M * 6, b = s * n, from = s * M, to = from + M;
     for (let e = 0; e < M; e++) {
@@ -1722,14 +1804,19 @@ function fieldEntryStats(sim, fs, payoutSpec, maxBlocks = Infinity) {
       const lb = lowerBound(sorted, v, from, to), ub = upperBound(sorted, v, from, to);
       const greater = to - ub, equal = ub - lb - 1;
       const k = blk * M + e;
-      winnings[k] += tiedWinnings(payout, greater, equal);
-      if (greater === 0) first[k] += 1 / (equal + 1);
+      const w = tiedWinnings(payout, greater, equal);
+      winnings[k] += w;
+      if (greater === 0) { first[k] += 1 / (equal + 1); firstW[k] += w; }   // first-place equity, as evaluateRow's band 0
       cnt[k]++;
     }
   }
-  const roi = new Float64Array(total), pFirst = new Float64Array(total);
-  for (let k = 0; k < total; k++) { roi[k] = cnt[k] ? (winnings[k] / cnt[k] - payout.fee) / payout.fee : 0; pFirst[k] = cnt[k] ? first[k] / cnt[k] : 0; }
-  return { roi, pFirst, payout, entries: total };
+  const roi = new Float64Array(total), roiExFirst = new Float64Array(total), pFirst = new Float64Array(total);
+  for (let k = 0; k < total; k++) {
+    roi[k] = cnt[k] ? (winnings[k] / cnt[k] - payout.fee) / payout.fee : 0;
+    roiExFirst[k] = cnt[k] ? ((winnings[k] - firstW[k]) / cnt[k] - payout.fee) / payout.fee : 0;
+    pFirst[k] = cnt[k] ? first[k] / cnt[k] : 0;
+  }
+  return { roi, roiExFirst, pFirst, payout, entries: total };
 }
 
 
@@ -2056,21 +2143,26 @@ async function createEngine(snapshot, { sims = 10000, seed = 1, fieldSize, entry
       let h = players[c].team === meta.home ? 1 : 0; for (const f of fl) if (players[f].team === meta.home) h++;
       eHome[e] = h;
     }
-    const sortedCopies = Float64Array.from(copies).sort(), sortedRoi = Float64Array.from(stats.roi).sort(), sortedFirst = Float64Array.from(stats.pFirst).sort();
+    const sortedCopies = Float64Array.from(copies).sort(), sortedRoi = Float64Array.from(stats.roi).sort(), sortedRoiExFirst = Float64Array.from(stats.roiExFirst).sort(), sortedFirst = Float64Array.from(stats.pFirst).sort();
     const groupRoi = (keyOf, labelOf) => {
       const acc = new Map();
       for (let e = 0; e < total; e++) { const k = keyOf(e); const g = acc.get(k) || { sum: 0, n: 0 }; g.sum += stats.roi[e]; g.n++; acc.set(k, g); }
       return [...acc.entries()].map(([k, g]) => ({ key: labelOf(k), roi: g.sum / g.n, share: 100 * g.n / total })).sort((a, b) => b.roi - a.roi);
     };
     const fieldAvgRoi = contest.prizePool / (N * contest.entryFee) - 1;
+    // D18 (review fix): the field's average ROI without first place is the mean over the benchmark field entries
+    // of their own ROI without first, with the same tie split as the lineup's (a tied-first share counts as
+    // first); (pool − first prize)/fees − 1 ignored that split and read about 2-3 points high.
+    let sumX = 0; for (let e = 0; e < total; e++) sumX += stats.roiExFirst[e];
+    const fieldAvgRoiExFirst = total ? sumX / total : null;
     const benchmarks = {
-      sampled: total, evaluated: total, scoredPerSim: M, subsampled: fs.subsampled, fieldAvgRoi,
-      expectedCopies: pctls(sortedCopies), roi: pctls(sortedRoi), pFirst: pctls(sortedFirst),
+      sampled: total, evaluated: total, scoredPerSim: M, subsampled: fs.subsampled, fieldAvgRoi, fieldAvgRoiExFirst,
+      expectedCopies: pctls(sortedCopies), roi: pctls(sortedRoi), roiExFirst: pctls(sortedRoiExFirst), pFirst: pctls(sortedFirst),
       captainRoi: groupRoi((e) => eCpt[e], (k) => players[k].id),
       splitRoi: groupRoi((e) => eHome[e], (k) => `${meta.home}${k}/${meta.away}${6 - k}`),
     };
     const means = Float32Array.from(fs.entryMean).sort();
-    Object.assign(C, { contest, N, fs, payout, benchmarks, sortedCopies, sortedRoi, weakThreshold: percentileSorted(means, 0.25), fieldAvgRoi });
+    Object.assign(C, { contest, N, fs, payout, benchmarks, sortedCopies, sortedRoi, sortedRoiExFirst, weakThreshold: percentileSorted(means, 0.25), fieldAvgRoi, fieldAvgRoiExFirst });
     report('ready', 1, 'ready');
   }
 
@@ -2220,8 +2312,11 @@ async function createEngine(snapshot, { sims = 10000, seed = 1, fieldSize, entry
     else if (expectedCopies < 1 && verdict === 'DEAD') warning = 'Unique, but it never wins: uniqueness is only worth something when the lineup can finish first.';
     const uniqueness = { expectedCopies, pPerMillion: p * 1e6, pZeroCopies, nearTwins: twins, salaryLeft, salaryBucketShare, ownershipProduct, warning, probability: p, meanScore, fieldWeakThreshold: C.weakThreshold, copiesPercentileVsField: shareAbove(C.sortedCopies, expectedCopies) };
 
-    const evOut = { roi: ev.roi, roiVsField: ev.roi - C.fieldAvgRoi, fieldAvgRoi: C.fieldAvgRoi, pFirst: ev.pFirst, pTop1pct: ev.pTop1pct, pCash: ev.pCash, avgFinishPct: ev.avgFinishPct, expectedWinnings: ev.expectedWinnings, breakdown: ev.breakdown, splitLoss: ev.splitLoss, entryFee: C.contest.entryFee, roiPercentileVsField: 100 - shareAbove(C.sortedRoi, ev.roi) };
-    return { feasibility, uniqueness, ev: evOut, _internal: { cpt, flexSorted, flexOrder: r.flex, roi: ev.roi, copies: expectedCopies, salary: v.salary } };
+    const evOut = { roi: ev.roi, roiVsField: ev.roi - C.fieldAvgRoi, fieldAvgRoi: C.fieldAvgRoi, pFirst: ev.pFirst, pTop1pct: ev.pTop1pct, pCash: ev.pCash, avgFinishPct: ev.avgFinishPct, expectedWinnings: ev.expectedWinnings, breakdown: ev.breakdown, splitLoss: ev.splitLoss, entryFee: C.contest.entryFee, roiPercentileVsField: 100 - shareAbove(C.sortedRoi, ev.roi),
+      // D18 headline: ROI without first place, its field comparison on the same basis, and first place as odds
+      roiExFirst: ev.roiExFirst, firstEquity: ev.firstEquity, fieldAvgRoiExFirst: C.fieldAvgRoiExFirst, roiExFirstVsField: C.fieldAvgRoiExFirst != null ? ev.roiExFirst - C.fieldAvgRoiExFirst : null,
+      roiExFirstPercentileVsField: 100 - shareAbove(C.sortedRoiExFirst, ev.roiExFirst), winsBySim: ev.winsBySim, sims };
+    return { feasibility, uniqueness, ev: evOut, _internal: { cpt, flexSorted, flexOrder: r.flex, roi: ev.roi, roiExFirst: ev.roiExFirst, copies: expectedCopies, salary: v.salary } };
   }
 
   // Top 8 single replacements per slot by EV change, legal lineups only.
@@ -2229,7 +2324,8 @@ async function createEngine(snapshot, { sims = 10000, seed = 1, fieldSize, entry
     const core = base || analyzeCore(lineup);
     // Candidates are scored exactly as analyze() scores the base (same refinement), so a swap's delta
     // equals analyze(swapped).ev.roi - analyze(base).ev.roi (tested).
-    const { cpt, flexOrder, roi, copies, salary } = core._internal;
+    // D18: ranked on the ex-first delta (deltaEvExFirst = analyze(swapped).ev.roiExFirst - analyze(base).ev.roiExFirst, tested).
+    const { cpt, flexOrder, roi, roiExFirst, copies, salary } = core._internal;
     const inL = new Set([cpt, ...flexOrder]);
     const out = [];
     const slotDefs = [{ slot: 'cpt' }, ...flexOrder.map((_, k) => ({ slot: k }))];
@@ -2246,9 +2342,9 @@ async function createEngine(snapshot, { sims = 10000, seed = 1, fieldSize, entry
         const fsorted = f2.slice().sort((a, b) => a - b);
         const { p, ev: e } = evalLineup(c2, fsorted);
         const cp = p * C.N;
-        options.push({ id: players[x].id, name: players[x].name, deltaEv: e.roi - roi, deltaCopies: cp - copies, deltaSalary: sal - salary, roi: e.roi, pFirst: e.pFirst, expectedCopies: cp, legal: true, approx: C.fs.subsampled });   // approx: in subsample mode absolute roi/pFirst carry the subsample error stated in ev.js; deltas use the same method as analyze()
+        options.push({ id: players[x].id, name: players[x].name, deltaEv: e.roi - roi, deltaEvExFirst: e.roiExFirst - roiExFirst, deltaCopies: cp - copies, deltaSalary: sal - salary, roi: e.roi, roiExFirst: e.roiExFirst, pFirst: e.pFirst, expectedCopies: cp, legal: true, approx: C.fs.subsampled });   // approx: in subsample mode absolute roi/pFirst carry the subsample error stated in ev.js; deltas use the same method as analyze()
       }
-      options.sort((a, b) => b.deltaEv - a.deltaEv);
+      options.sort((a, b) => b.deltaEvExFirst - a.deltaEvExFirst);
       out.push({ slot: sd.slot, current: players[sd.slot === 'cpt' ? cpt : flexOrder[sd.slot]].id, options: options.slice(0, 8) });
     }
     return out;
@@ -2265,11 +2361,11 @@ async function createEngine(snapshot, { sims = 10000, seed = 1, fieldSize, entry
     players, fitReport, legalCount: en.count, meta, sims, buildMs, bestRateMs, bestRateNoLineupSims: bestRates.noLineupSims, fieldSharpness,
     get fieldSize() { return C.N; },
     get fieldBenchmarks() { return C.benchmarks; },
-    get contest() { return { ...C.contest, paid: C.payout.paid, alpha: C.payout.alpha, prizes: Array.from(C.payout.prizes), scoredPerSim: C.fs.scored, subsampled: C.fs.subsampled, fieldAvgRoi: C.fieldAvgRoi }; },
+    get contest() { return { ...C.contest, paid: C.payout.paid, alpha: C.payout.alpha, prizes: Array.from(C.payout.prizes), scoredPerSim: C.fs.scored, subsampled: C.fs.subsampled, fieldAvgRoi: C.fieldAvgRoi, fieldAvgRoiExFirst: C.fieldAvgRoiExFirst }; },
     get info() {
       const payout = C.payout, N = C.N;
       return {
-        sims, seed, fieldSize: N, entryFee: payout.fee, prizePool: payout.pool, firstPrize: payout.first, paid: payout.paid, alpha: payout.alpha, prizes: Array.from(payout.prizes), payoutAssumed: C.contest.assumed, fieldAvgRoi: C.fieldAvgRoi,
+        sims, seed, fieldSize: N, entryFee: payout.fee, prizePool: payout.pool, firstPrize: payout.first, paid: payout.paid, alpha: payout.alpha, prizes: Array.from(payout.prizes), payoutAssumed: C.contest.assumed, fieldAvgRoi: C.fieldAvgRoi, fieldAvgRoiExFirst: C.fieldAvgRoiExFirst,
         assumptions: [
           `Team points are normal around the implied totals: margin SD ${MARGIN_SD}, total SD ${TOTAL_SD}, calibrated to TwoGunGPT's script-book game counts.`,
           'Player tails: linear in z down to a floor (0 offence, -4 DST) at z=-3; above the 95th percentile extended by the (p95-p80) gap per unit of (z95-z80).',
@@ -2353,6 +2449,27 @@ function lastName(name) { const w = name.split(/\s+/).filter(x => !/^(jr|sr|ii|i
 // Swap deltas are ROI differences in percentage points, never a return: "+23 pts" with "ROI goes from +72% to +95%" on hover.
 function roiPts(d) { return signed(d * 100, 0, ' pts') }
 function roiFromTo(base, o) { const to = o.roi != null ? o.roi : (base != null ? base + o.deltaEv : null); return base != null && to != null ? `ROI goes from ${signed(base * 100, 0, '%')} to ${signed(to * 100, 0, '%')}` : `ROI ${roiPts(o.deltaEv)}` }
+// D18: the same, on ROI without first place (swaps rank and read on it).
+function roiExFromTo(base, o) { const to = o.roiExFirst != null ? o.roiExFirst : (base != null ? base + o.deltaEvExFirst : null); return base != null && to != null ? `ROI without 1st goes from ${signed(base * 100, 0, '%')} to ${signed(to * 100, 0, '%')}` : `ROI without 1st ${roiPts(o.deltaEvExFirst)}` }
+// The page's one "first place too rare to measure" test, shared by the feasibility gauge, the takeaways, the EV
+// gauge's "Wins 1st" row and saved cards so they never disagree: under 2 wins in the sims, or P(first) under
+// 1/(10 x sims), or a 90% Wilson band (z = 1.645, the engine's winsCI formula) wider than 10x top to bottom.
+function firstTooRare(pFirst, sims) {
+  sims = sims || 10000
+  if (!(pFirst > 0) || pFirst * sims < 2 || pFirst < 1 / (10 * sims)) return true
+  const z = 1.645, den = 1 + z * z / sims, ctr = (pFirst + z * z / (2 * sims)) / den
+  const half = z * Math.sqrt(pFirst * (1 - pFirst) / sims + z * z / (4 * sims * sims)) / den
+  const lo = Math.max(0, ctr - half), hi = Math.min(1, ctr + half)
+  return lo > 0 && hi / lo > 10
+}
+function sig2(n) { const mag = Math.pow(10, Math.max(0, Math.floor(Math.log10(n)) - 1)); return (Math.round(n / mag) * mag).toLocaleString('en-US') }
+// D18 first-place odds line: "about 1 in N" only when firstTooRare is false (when the feasibility gauge states a
+// 1-in-N too); otherwise "too rare to measure" with the sims' resolution (about 1 in sims/2.7, the band's top).
+function winsFirstOdds(pFirst, sims) {
+  sims = sims || 10000
+  if (firstTooRare(pFirst, sims)) return `too rare to measure (sims resolve about 1 in ${sig2(sims / 2.7)})`
+  return `about 1 in ${sig2(1 / pFirst)}`
+}
 // Per-player Proj hover (D14, Adam 2026-10-12): the average, with his median named so the two are never confused.
 function projTip(p, m = 1) { return `Projection: TwoGunGPT's average score; his median is ${(p.median * m).toFixed(1)} (the middle of his range)${m > 1 ? ' (Captain 1.5x)' : ''}` }
 function cls(x) { return x > 0.0005 ? 'good' : x < -0.0005 ? 'bad' : 'zero' }
@@ -2392,6 +2509,8 @@ const TIP = {
   scriptAvg: 'This lineup\'s average score in simulated games of this script.',
   needs: 'His average score in the games where this lineup won first place, and where that sits in his own distribution (his top Y% game).',
   dEv: 'Change in ROI, in percentage points, if you make this one swap, everything else the same.',
+  dEvEx: 'Change in ROI without first place, in percentage points, if you make this one swap, everything else the same. First place is left out because one simulated win swings full ROI by about 100 points in a big contest.',
+  roiEx: 'Return per dollar from every finish except first place, prizes split with exact duplicates. First place is shown separately as odds because one simulated first-place win swings full ROI by about 100 points in a big contest.',
   dCopies: 'Change in expected duplicate copies in the field after the swap.',
   dSal: 'Change in salary spent after the swap (Captain salary is 1.5x).'
 }
@@ -2834,9 +2953,449 @@ function bindPool() {
 }
 
 
+// ---- src/ui/store.js ----
+// Saved lineups store (ruling D17): per slate, in save order, kept for good. Two layers:
+//  - PURE helpers (top half): record building, duplicate key, sequence numbers, merge, push list, renumbering, filter
+//    (role-aware), exposure, kickoff parsing and the archive/purge clocks. No DOM, no storage.
+//  - I/O (bottom half): localStorage 'lineuplab-tgff.saved.v2' always (the store on the site and from disk, a backup in
+//    the artifact), plus the artifact `db` capability under the viewer's private data/users/<id>/ collection when
+//    claude.use('db') and claude.use('user') resolve. Deletes are tombstones ({uid, slateKey, seq, deleted: true}) so a
+//    delete on one device is never resurrected by another device's union merge.
+// tests/saved.test.mjs loads fmt.js + this file into a node:vm context (with a fake db and storage) and calls both halves.
+// Visibility (Adam 2026-10-12): a slate's lineups leave the view from 4:00 AM local on the day after kickoff; nothing is
+// deleted from db; the browser copy of a record is dropped 7 days after kickoff ONLY when db has confirmed it, and never
+// on a copy with no db (the site, from disk).
+
+const SAVED_LOCAL_KEY = 'lineuplab-tgff.saved.v2'
+const SAVED_V1_KEY = 'lineuplab-tgff.saved.v1'
+const SAVED_LOCAL_KEEP_MS = 7 * 24 * 3600 * 1000
+
+// ---------------- pure helpers ----------------
+
+function savedSlateKey(meta) {
+  return `${meta.season}-w${String(meta.week).padStart(2, '0')}-${meta.slate}-${meta.away}${meta.home}`
+}
+
+// Same captain and the same five FLEX in any order = the same DraftKings entry.
+function savedDupKey(cpt, flex) { return String(cpt) + '|' + flex.slice().map(String).sort().join(',') }
+
+// Next number for a slate: one past the highest ever used there, tombstones included, so numbers are never reused.
+function savedNextSeq(records, slateKey) {
+  let max = 0
+  for (const r of records) if (r && r.slateKey === slateKey && Number(r.seq) > max) max = Number(r.seq)
+  return max + 1
+}
+
+// The lineups a slate shows (deleted ones excluded), in save order.
+function savedLive(records, slateKey) {
+  return records.filter(r => r && r.slateKey === slateKey && !r.deleted).sort((a, b) => a.seq - b.seq || String(a.savedAt).localeCompare(String(b.savedAt)))
+}
+
+function savedFinite(x) { return typeof x === 'number' && Number.isFinite(x) ? x : null }
+
+// The three gauge figures at save time from an engine analysis; null when there is no analysis (never 0).
+function savedStatsFrom(a, contest) {
+  if (!a) return null
+  const f = a.feasibility || {}, u = a.uniqueness || {}, e = a.ev || {}
+  const top1 = savedFinite(f.pTop1pct) != null ? f.pTop1pct : savedFinite(e.pTop1pct)
+  // D18: roiExFirst is the headline; pFirst feeds the "1st: 1 in N" line; full roi kept for the hover
+  const stats = { top1pct: top1, copies: savedFinite(u.expectedCopies), roi: savedFinite(e.roi), roiExFirst: savedFinite(e.roiExFirst), pFirst: savedFinite(e.pFirst), sims: savedFinite(e.sims) }
+  if (contest && contest.size) stats.contest = { entryFee: contest.entryFee, size: contest.size }
+  return stats
+}
+
+// One saved lineup. `byId` is the board (Map id -> player); a player missing from it is kept by id with blanks.
+function savedBuildRecord({ uid, seq, slateKey, cpt, flex, byId, stats, name, savedAtMs, kickoffMs }) {
+  const players = [{ id: cpt, slot: 'CPT' }, ...flex.map(id => ({ id, slot: 'FLEX' }))].map(({ id, slot }) => {
+    const p = byId.get(id)
+    if (!p) return { id, name: id, team: '', pos: '', salary: null, slot, proj: null }
+    return { id, name: p.name, team: p.team, pos: p.pos, salary: slot === 'CPT' ? p.cptSalary : p.salary, slot, proj: savedFinite(p.projection) }
+  })
+  const known = players.every(p => p.salary != null)
+  const projKnown = players.every(p => p.proj != null)
+  const salary = known ? players.reduce((s, p) => s + p.salary, 0) : null
+  const proj = projKnown ? Math.round(players.reduce((s, p) => s + p.proj * (p.slot === 'CPT' ? 1.5 : 1), 0) * 100) / 100 : null
+  const cp = byId.get(cpt)
+  return {
+    uid, seq, slateKey,
+    name: name || `${cp ? lastName(cp.name) : cpt} CPT`,
+    cpt, flex: flex.slice(),
+    savedAt: new Date(savedAtMs).toISOString(), updatedAt: savedAtMs,
+    kickoffAt: kickoffMs != null ? new Date(kickoffMs).toISOString() : null,
+    salary, proj, stats: stats || null, players
+  }
+}
+
+// A record read from outside (db or storage) must carry these with the right types, or it is skipped (never blanked).
+function savedValidRecord(r) {
+  if (!r || typeof r !== 'object' || typeof r.uid !== 'string' || !r.uid || typeof r.slateKey !== 'string' || savedFinite(r.seq) == null) return false
+  if (r.deleted === true) return true
+  if (typeof r.cpt !== 'string' || !Array.isArray(r.flex) || r.flex.length !== 5 || r.flex.some(x => typeof x !== 'string')) return false
+  if (!Array.isArray(r.players) || r.players.length !== 6 || r.players.some(p => !p || typeof p.id !== 'string')) return false
+  const num = x => x == null || savedFinite(x) != null
+  if (!num(r.proj) || !num(r.salary)) return false
+  if (r.stats != null && (typeof r.stats !== 'object' || !num(r.stats.copies) || !num(r.stats.roi) || !num(r.stats.top1pct) || !num(r.stats.roiExFirst) || !num(r.stats.pFirst) || !num(r.stats.sims))) return false
+  return true
+}
+
+// Which of two copies of one uid wins: a tombstone always beats a live copy; otherwise the later edit.
+function savedPick(x, y) {
+  if (x.deleted && !y.deleted) return x
+  if (y.deleted && !x.deleted) return y
+  return (Number(y.updatedAt) || 0) > (Number(x.updatedAt) || 0) ? y : x
+}
+
+// Union of two lists by uid: every uid from either side survives (as its winning copy).
+function savedMerge(a, b) {
+  const m = new Map()
+  for (const r of [...(a || []), ...(b || [])]) {
+    if (!savedValidRecord(r)) continue
+    const cur = m.get(r.uid)
+    m.set(r.uid, cur ? savedPick(cur, r) : r)
+  }
+  return [...m.values()].sort((p, q) => p.slateKey.localeCompare(q.slateKey) || p.seq - q.seq)
+}
+
+// Confirmed = db has shown or accepted this uid at this version or newer. `confirmed` is {uid: updatedAt}.
+function savedIsConfirmed(r, confirmed) { return confirmed[r.uid] != null && Number(confirmed[r.uid]) >= (Number(r.updatedAt) || 0) }
+
+// Every record (any slate) that db has not confirmed at its current version.
+function savedPushList(records, confirmed) { return records.filter(r => !savedIsConfirmed(r, confirmed)) }
+
+// After a definitive read of one slate: a record db has never seen whose number is held by a different uid in db
+// moves to the next free number (fixes two devices both saving #8 offline, and saves made before db answered).
+function savedRenumber(records, remote, slateKey) {
+  const seen = new Set(remote.map(r => r.uid))
+  const held = new Map(remote.filter(r => r.slateKey === slateKey).map(r => [Number(r.seq), r.uid]))
+  let next = savedNextSeq([...records, ...remote], slateKey)
+  const changed = []
+  const out = records.slice().sort((a, b) => a.seq - b.seq).map(r => {
+    if (r.slateKey !== slateKey || seen.has(r.uid)) return r
+    const owner = held.get(Number(r.seq))
+    if (owner == null || owner === r.uid) return r
+    changed.push(r.uid)
+    return Object.assign({}, r, { seq: next++, updatedAt: (Number(r.updatedAt) || 0) + 1 })
+  })
+  return { records: out, changed }
+}
+
+function savedIdsOf(r) { return [r.cpt, ...r.flex] }
+
+// A filter pick: a bare id means "Any" (Captain or FLEX); {id, role: 'CPT'|'FLEX'|'ANY'} narrows to that slot.
+function savedPickMatches(r, pick) {
+  const id = typeof pick === 'string' ? pick : pick.id
+  const role = typeof pick === 'string' ? 'ANY' : (pick.role || 'ANY')
+  if (role === 'CPT') return r.cpt === id
+  if (role === 'FLEX') return r.flex.includes(id)
+  return r.cpt === id || r.flex.includes(id)
+}
+
+// The lineups matching EVERY pick (AND).
+function savedFilter(list, picks) {
+  if (!picks || !picks.length) return list.slice()
+  return list.filter(r => picks.every(p => savedPickMatches(r, p)))
+}
+
+// Exposure over `list`: one row per player with count (lineups holding him), CPT and FLEX counts, pct of the list.
+function savedExposure(list) {
+  const m = new Map()
+  for (const r of list) {
+    for (const p of r.players) {
+      let e = m.get(p.id)
+      if (!e) { e = { id: p.id, name: p.name, team: p.team, pos: p.pos, proj: p.proj, count: 0, cpt: 0, flex: 0 }; m.set(p.id, e) }
+      e.count++
+      if (p.slot === 'CPT') e.cpt++; else e.flex++
+    }
+  }
+  const n = list.length
+  return [...m.values()].map(e => Object.assign(e, { pct: n ? e.count / n * 100 : 0 }))
+}
+
+// Sort exposure rows by `key` (count = Exposure, the default; name, cpt, flex, team, proj); ties by count then name.
+// A missing projection sorts last in either direction.
+function savedSortExposure(rows, dir, key) {
+  key = key || 'count'
+  const val = e => key === 'name' || key === 'team' ? String(e[key] || '') : e[key]
+  return rows.slice().sort((a, b) => {
+    const x = val(a), y = val(b)
+    if (key === 'proj' && (x == null || y == null) && x !== y) return x == null ? 1 : -1
+    const c = typeof x === 'string' ? x.localeCompare(y) : (x || 0) - (y || 0)
+    if (key === 'count') return dir * (c || a.cpt - b.cpt) || String(a.name).localeCompare(String(b.name))
+    return dir * c || (b.count - a.count) || String(a.name).localeCompare(String(b.name))
+  })
+}
+
+// A saved lineup scored after the fact (Save pressed before the model finished): fill only a record that still
+// needs figures (no stats, or stats from before D18 without ROI ex-1st), and only with stats that carry ROI ex-1st
+// when replacing old ones; the edit time moves on so it syncs like any edit. Returns the new record, or null for no change.
+function savedNeedsScore(r) { return !!r && !r.deleted && (r.stats == null || savedFinite(r.stats.roiExFirst) == null) }
+function savedFillStats(r, stats, nowMs) {
+  if (!savedNeedsScore(r) || !stats) return null
+  if (r.stats != null && savedFinite(stats.roiExFirst) == null) return null
+  return Object.assign({}, r, { stats, updatedAt: Math.max(nowMs, (Number(r.updatedAt) || 0) + 1) })
+}
+
+// v1 (one list, newest first, no slate) -> records in the current slate, oldest first; skips duplicates of `existing`.
+function savedFromV1(v1, slateKey, byId, existing, newUid, kickoffMs) {
+  if (!Array.isArray(v1)) return []
+  const out = []
+  const seen = new Set(savedLive(existing, slateKey).map(r => savedDupKey(r.cpt, r.flex)))
+  for (const x of v1.slice().reverse()) {
+    if (!x || typeof x.cpt !== 'string' || !Array.isArray(x.flex) || x.flex.length !== 5 || x.flex.some(id => typeof id !== 'string')) continue
+    const k = savedDupKey(x.cpt, x.flex)
+    if (seen.has(k)) continue
+    seen.add(k)
+    const stats = (savedFinite(x.roi) != null || savedFinite(x.copies) != null) ? { top1pct: null, copies: savedFinite(x.copies), roi: savedFinite(x.roi) } : null
+    const ts = Number.isFinite(Number(x.ts)) ? Number(x.ts) : 0
+    out.push(savedBuildRecord({ uid: newUid(), seq: savedNextSeq([...existing, ...out], slateKey), slateKey, cpt: x.cpt, flex: x.flex, byId, stats, name: typeof x.name === 'string' ? x.name : '', savedAtMs: ts, kickoffMs }))
+  }
+  return out
+}
+
+// Kickoff text "Mon, Oct 12, 7:15 PM CT" + season -> UTC ms, or null when it cannot be read (then nothing hides).
+// The NFL season runs Sep-Feb, so January-May kickoffs fall in season + 1. US zones; daylight time from 2:00 AM on the
+// second Sunday of March to 2:00 AM on the first Sunday of November (local clock).
+const SAVED_TZ = { ET: -5, CT: -6, MT: -7, PT: -8, EST: -5, CST: -6, MST: -7, PST: -8, EDT: -5, CDT: -6, MDT: -7, PDT: -8 }
+const SAVED_MON = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 }
+function savedUsDst(year, month, day, hour) {
+  const nthSunday = (m, n) => { const first = new Date(Date.UTC(year, m, 1)).getUTCDay(); return 1 + ((7 - first) % 7) + 7 * (n - 1) }
+  const v = month * 10000 + day * 100 + hour
+  return v >= 2 * 10000 + nthSunday(2, 2) * 100 + 2 && v < 10 * 10000 + nthSunday(10, 1) * 100 + 2
+}
+function savedParseKickoff(text, season) {
+  const m = /([A-Za-z]{3})[a-z]*\.?\s+(\d{1,2}),?\s+(\d{1,2}):(\d{2})\s*([AP])\.?M\.?\s+([A-Z]{2,3})\b/i.exec(String(text || ''))
+  if (!m || !Number.isFinite(Number(season))) return null
+  const month = SAVED_MON[m[1].toLowerCase()], zone = m[6].toUpperCase()
+  if (month == null || !(zone in SAVED_TZ)) return null
+  const year = month < 6 ? Number(season) + 1 : Number(season)
+  const day = +m[2]
+  let hour = +m[3] % 12; if (m[5].toUpperCase() === 'P') hour += 12
+  const std = SAVED_TZ[zone]
+  const explicit = zone.length === 3 ? zone[1] : null
+  const off = explicit === 'D' ? std + 1 : explicit === 'S' ? std : std + (savedUsDst(year, month, day, hour) ? 1 : 0)
+  return Date.UTC(year, month, day, hour, +m[4]) - off * 3600 * 1000
+}
+
+// 4:00 AM, viewer's local time, on the local day after kickoff: from then the slate's lineups leave the view.
+function savedHideAfter(kickoffMs) {
+  const d = new Date(kickoffMs)
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 4, 0, 0, 0).getTime()
+}
+function savedIsArchived(kickoffMs, nowMs) { return kickoffMs != null && Number.isFinite(kickoffMs) && nowMs >= savedHideAfter(kickoffMs) }
+// 7 days past its kickoff; records without a kickoff never expire.
+function savedLocalExpired(r, nowMs) {
+  const k = r && r.kickoffAt ? Date.parse(r.kickoffAt) : NaN
+  return Number.isFinite(k) && nowMs >= k + SAVED_LOCAL_KEEP_MS
+}
+// The browser copy keeps everything unless db is present AND has confirmed the record AND it is 7 days past kickoff.
+function savedPurge(records, confirmed, nowMs, hasDb) {
+  if (!hasDb) return records
+  return records.filter(r => !(savedLocalExpired(r, nowMs) && savedIsConfirmed(r, confirmed)))
+}
+
+// The archive shape the lead stores in git: one slate's live lineups in save order.
+function savedArchiveJson(records, slateKey, nowMs) {
+  return { slateKey, exportedAt: new Date(nowMs).toISOString(), lineups: savedLive(records, slateKey) }
+}
+
+function savedNewUid() {
+  let s = ''
+  try { const b = new Uint8Array(10); crypto.getRandomValues(b); s = Array.from(b, x => x.toString(36).padStart(2, '0')).join('') } catch (e) { s = Math.random().toString(36).slice(2) + Date.now().toString(36) }
+  return 'l' + s
+}
+
+// ---------------- I/O: localStorage always, the artifact db when it resolves ----------------
+// dbMode: 'none' (no db on this view: the site, from disk), 'pending', 'ok' (read and subscribed), 'error' (db
+// unreachable; retried on the next save or load), 'nosync' (no viewer id, or the user capability failed).
+// note: '' | 'load-failed' | 'write-failed' | 'no-sync' | 'user-error' — what the Saved view says about the Claude copy.
+// localOk: false when this browser's storage refused a read or write (the view says lineups will be lost on reload).
+const SAVED_STATE = {
+  records: [], v1Imported: false, confirmed: {}, slateKey: null, kickoffMs: null, byId: null,
+  dbMode: 'none', coll: null, unsub: null, note: '', localOk: true,
+  chain: Promise.resolve(), attached: Promise.resolve(), onChange: null
+}
+
+function savedChanged() { if (SAVED_STATE.onChange) { try { SAVED_STATE.onChange() } catch (e) { console.error(e) } } }
+
+function savedLocalRead() {
+  try {
+    const o = JSON.parse(localStorage.getItem(SAVED_LOCAL_KEY) || 'null')
+    if (o && Array.isArray(o.records)) return { records: o.records.filter(savedValidRecord), v1Imported: !!o.v1Imported, confirmed: (o.confirmed && typeof o.confirmed === 'object') ? o.confirmed : {} }
+  } catch (e) { console.warn('Saved lineups: browser copy unreadable', e); SAVED_STATE.localOk = false }
+  return { records: [], v1Imported: false, confirmed: {} }
+}
+function savedLocalWrite() {
+  if (SAVED_STATE.dbMode === 'ok') {
+    SAVED_STATE.records = savedPurge(SAVED_STATE.records, SAVED_STATE.confirmed, Date.now(), true)
+    const keep = new Set(SAVED_STATE.records.map(r => r.uid))
+    for (const u of Object.keys(SAVED_STATE.confirmed)) if (!keep.has(u)) delete SAVED_STATE.confirmed[u]
+  }
+  try {
+    localStorage.setItem(SAVED_LOCAL_KEY, JSON.stringify({ v: 2, v1Imported: SAVED_STATE.v1Imported, confirmed: SAVED_STATE.confirmed, records: SAVED_STATE.records }))
+    SAVED_STATE.localOk = true
+  } catch (e) { console.warn('Saved lineups: browser storage blocked or full', e); SAVED_STATE.localOk = false }
+}
+
+// The lineups the Saved view shows now: none once the slate is archived (4 AM the day after kickoff).
+function savedStoreList() { return savedStoreArchived() ? [] : savedLive(SAVED_STATE.records, SAVED_STATE.slateKey) }
+function savedStoreArchived() { return savedIsArchived(SAVED_STATE.kickoffMs, Date.now()) }
+function savedStoreFind(uid) { return SAVED_STATE.records.find(r => r.uid === uid && !r.deleted) || null }
+function savedStoreHasDb() { return SAVED_STATE.dbMode === 'ok' || SAVED_STATE.dbMode === 'pending' || SAVED_STATE.dbMode === 'error' }
+
+// One-time import of the v1 list; runs once, against whatever the store holds when it runs.
+function savedImportV1() {
+  if (SAVED_STATE.v1Imported) return
+  let v1 = null
+  try { v1 = JSON.parse(localStorage.getItem(SAVED_V1_KEY) || 'null') } catch (e) { v1 = null }
+  const add = savedFromV1(v1, SAVED_STATE.slateKey, SAVED_STATE.byId, SAVED_STATE.records, savedNewUid, SAVED_STATE.kickoffMs)
+  SAVED_STATE.records = savedMerge(SAVED_STATE.records, add)
+  SAVED_STATE.v1Imported = true     // v1 itself is left in place
+  savedLocalWrite()
+}
+
+// Called once from init(): browser copy now; the db (and, with a db, the v1 import) later without blocking paint.
+function savedStoreInit(meta, byId, onChange) {
+  SAVED_STATE.slateKey = savedSlateKey(meta)
+  SAVED_STATE.kickoffMs = savedParseKickoff(meta.kickoff, meta.season)
+  SAVED_STATE.byId = byId
+  SAVED_STATE.onChange = onChange
+  const local = savedLocalRead()
+  SAVED_STATE.records = local.records
+  SAVED_STATE.v1Imported = local.v1Imported
+  SAVED_STATE.confirmed = local.confirmed
+  const hasRuntime = typeof window !== 'undefined' && window.claude && typeof window.claude.use === 'function'
+  if (!hasRuntime) savedImportV1()
+  else SAVED_STATE.dbMode = 'pending'
+  savedChanged()
+  SAVED_STATE.attached = hasRuntime ? savedDbAttach() : Promise.resolve()
+  return SAVED_STATE.attached
+}
+
+async function savedDbAttach() {
+  let db = null
+  try { db = await window.claude.use('db') }
+  catch (e) { console.warn('Saved lineups: claude.use("db") failed', e); return savedNoSync('user-error') }
+  if (!db) { SAVED_STATE.dbMode = 'none'; savedImportV1(); savedChanged(); return }   // no db on this view
+  let id = null
+  try { const user = await window.claude.use('user'); id = user ? await user.id() : null }
+  catch (e) { console.warn('Saved lineups: user capability failed', e); return savedNoSync('user-error') }
+  if (!id) return savedNoSync('no-sync')
+  SAVED_STATE.coll = db.collection('data/users/' + id)
+  await savedQueue()
+}
+function savedNoSync(note) { SAVED_STATE.dbMode = 'nosync'; SAVED_STATE.note = note; savedImportV1(); savedChanged() }
+
+// Syncs run one at a time (which also keeps db writes one at a time), after the first attach finishes.
+// Resolves 'none' | 'nosync' | 'ok' | 'load-failed' | 'write-failed'.
+function savedQueue() {
+  const run = SAVED_STATE.chain.then(savedDbSyncOnce, savedDbSyncOnce)
+  SAVED_STATE.chain = run.catch(() => {})
+  return run
+}
+function savedDbSync() { return SAVED_STATE.attached.then(savedQueue, savedQueue) }
+
+async function savedDbSyncOnce() {
+  const coll = SAVED_STATE.coll
+  if (!coll) return SAVED_STATE.dbMode === 'nosync' ? 'nosync' : 'none'
+  const key = SAVED_STATE.slateKey
+  if (SAVED_STATE.dbMode !== 'ok') {
+    let snap
+    try { snap = await coll.where('slateKey', '==', key).get() }
+    catch (e) {
+      console.warn('Saved lineups: db read failed', e)
+      SAVED_STATE.dbMode = 'error'; SAVED_STATE.note = 'load-failed'
+      savedImportV1(); savedChanged(); return 'load-failed'
+    }
+    savedTakeRead(snap, key)
+    SAVED_STATE.dbMode = 'ok'
+    if (SAVED_STATE.note === 'load-failed') SAVED_STATE.note = ''
+    savedLocalWrite()
+    savedSubscribe(coll, key)
+    savedChanged()
+  }
+  for (const r of savedPushList(SAVED_STATE.records, SAVED_STATE.confirmed)) {
+    try { await coll.doc(r.uid).set(JSON.parse(JSON.stringify(r))); SAVED_STATE.confirmed[r.uid] = r.updatedAt }
+    catch (e) { console.warn('Saved lineups: db write failed', e); SAVED_STATE.note = 'write-failed'; savedLocalWrite(); savedChanged(); return 'write-failed' }
+  }
+  savedLocalWrite()
+  if (SAVED_STATE.note === 'write-failed') { SAVED_STATE.note = ''; savedChanged() }
+  return 'ok'
+}
+
+function savedRemoteDocs(snap) {
+  const docs = snap.docs.filter(d => d.exists).map(d => d.data())
+  const good = docs.filter(savedValidRecord)
+  if (good.length < docs.length) console.warn(`Saved lineups: skipped ${docs.length - good.length} malformed db record(s)`)
+  return good
+}
+
+// A definitive read: confirm what db holds, merge, run the v1 import against the merged set, then renumber collisions.
+function savedTakeRead(snap, key) {
+  const good = savedRemoteDocs(snap)
+  for (const r of good) SAVED_STATE.confirmed[r.uid] = Math.max(Number(SAVED_STATE.confirmed[r.uid]) || 0, Number(r.updatedAt) || 0)
+  SAVED_STATE.records = savedMerge(SAVED_STATE.records, good)
+  if (!SAVED_STATE.v1Imported) {
+    let v1 = null
+    try { v1 = JSON.parse(localStorage.getItem(SAVED_V1_KEY) || 'null') } catch (e) { v1 = null }
+    SAVED_STATE.records = savedMerge(SAVED_STATE.records, savedFromV1(v1, key, SAVED_STATE.byId, SAVED_STATE.records, savedNewUid, SAVED_STATE.kickoffMs))
+    SAVED_STATE.v1Imported = true
+  }
+  SAVED_STATE.records = savedRenumber(SAVED_STATE.records, good, key).records
+}
+
+// Live updates: merge only (never writes); a server-definitive snapshot also confirms what it shows.
+function savedSubscribe(coll, key) {
+  if (SAVED_STATE.unsub) return
+  SAVED_STATE.unsub = coll.where('slateKey', '==', key).onSnapshot(
+    snap => {
+      const good = savedRemoteDocs(snap)
+      if (!(snap.metadata && (snap.metadata.fromCache || snap.metadata.hasPendingWrites))) for (const r of good) SAVED_STATE.confirmed[r.uid] = Math.max(Number(SAVED_STATE.confirmed[r.uid]) || 0, Number(r.updatedAt) || 0)
+      SAVED_STATE.records = savedMerge(SAVED_STATE.records, good)
+      savedLocalWrite(); savedChanged()
+    },
+    err => { console.warn('Saved lineups: live sync stopped', err); SAVED_STATE.unsub = null; SAVED_STATE.dbMode = 'error'; SAVED_STATE.note = 'load-failed'; savedChanged() })
+}
+
+// Save: {status: 'incomplete'} | {status: 'dup', record} | {status: 'saved', record, sync: Promise}.
+function savedStoreAdd(lineup, byId, stats) {
+  const ids = [lineup.cpt, ...lineup.flex]
+  if (ids.some(x => !x)) return { status: 'incomplete' }
+  const key = savedDupKey(lineup.cpt, lineup.flex)
+  const dup = savedLive(SAVED_STATE.records, SAVED_STATE.slateKey).find(r => savedDupKey(r.cpt, r.flex) === key)
+  if (dup) return { status: 'dup', record: dup }
+  const now = Date.now()
+  const rec = savedBuildRecord({ uid: savedNewUid(), seq: savedNextSeq(SAVED_STATE.records, SAVED_STATE.slateKey), slateKey: SAVED_STATE.slateKey, cpt: lineup.cpt, flex: lineup.flex, byId, stats, savedAtMs: now, kickoffMs: SAVED_STATE.kickoffMs })
+  SAVED_STATE.records = SAVED_STATE.records.concat([rec])
+  savedLocalWrite(); savedChanged()
+  return { status: 'saved', record: rec, sync: savedDbSync() }
+}
+
+function savedStoreReplace(uid, make) {
+  const i = SAVED_STATE.records.findIndex(r => r.uid === uid)
+  if (i < 0) return null
+  const next = make(SAVED_STATE.records[i])
+  SAVED_STATE.records = SAVED_STATE.records.slice(); SAVED_STATE.records[i] = next
+  savedLocalWrite(); savedChanged()
+  return savedDbSync()
+}
+function savedStoreRename(uid, name) {
+  const clean = String(name || '').trim().slice(0, 60)
+  if (!clean) return null
+  return savedStoreReplace(uid, r => Object.assign({}, r, { name: clean, updatedAt: Math.max(Date.now(), (Number(r.updatedAt) || 0) + 1) }))
+}
+function savedStoreFillStats(uid, stats) {
+  const r = SAVED_STATE.records.find(x => x.uid === uid)
+  if (!savedFillStats(r, stats, Date.now())) return null
+  return savedStoreReplace(uid, cur => savedFillStats(cur, stats, Date.now()) || cur)
+}
+function savedStoreDelete(uid) {
+  return savedStoreReplace(uid, r => ({ uid: r.uid, slateKey: r.slateKey, seq: r.seq, kickoffAt: r.kickoffAt || null, deleted: true, updatedAt: Math.max(Date.now(), (Number(r.updatedAt) || 0) + 1) }))
+}
+
+
 // ---- src/ui/lineup.js ----
 // Lineup card (the hero of the right column): Captain + five FLEX slots with headshots, team stripe, position chip,
-// salary, swap chips under each slot, salary bar, team split, Clear, Save (localStorage), saved list, undo/redo.
+// salary, swap chips under each slot, salary bar, team split, Clear, Save (to the Saved lineups view, D17), undo/redo.
 // Editing helpers (setCaptain, toggleFlex, removeSlot, clearLineup) mutate S.lineup and call onLineupEdit().
 
 const SLOT_KEYS = ['cpt', 0, 1, 2, 3, 4]
@@ -2934,8 +3493,8 @@ function swapChips(slot) {
   if (!s || !s.options.length) return ''
   return `<span class="chips">` + s.options.filter(o => o.legal !== false).slice(0, 3).map(o => {
     const p = S.byId.get(o.id); if (!p) return ''
-    const base = a.ev ? a.ev.roi : null
-    return `<button class="swc ${cls(o.deltaEv)}" data-swap="${slot}" data-id="${o.id}" title="Swap in ${esc(p.name)}: ${roiFromTo(base, o)}; copies ${signed(o.deltaCopies, 2)}; salary ${signedMoney(o.deltaSalary)}${o.approx ? '; approximate in this contest size' : ''}. Click to apply.">${esc(lastName(p.name))} <b>${roiPts(o.deltaEv)}</b></button>`
+    const base = a.ev ? a.ev.roiExFirst : null   // D18: chips read ROI without first place
+    return `<button class="swc ${cls(o.deltaEvExFirst)}" data-swap="${slot}" data-id="${o.id}" title="Swap in ${esc(p.name)}: ${roiExFromTo(base, o)}; copies ${signed(o.deltaCopies, 2)}; salary ${signedMoney(o.deltaSalary)}${o.approx ? '; approximate in this contest size' : ''}. Click to apply.">${esc(lastName(p.name))} <b>${roiPts(o.deltaEvExFirst)}</b></button>`
   }).join('') + `</span>`
 }
 
@@ -2961,7 +3520,9 @@ function renderLineup(v) {
   sal.classList.toggle('over', v.salary > CAP)
   sal.querySelector('.bar i').style.width = Math.min(100, v.salary / CAP * 100) + '%'
   sal.querySelector('.spent').textContent = money(v.salary) + ' spent'
-  sal.querySelector('.left').textContent = v.salary > CAP ? money(v.salary - CAP) + ' over' : money(v.salaryLeft) + ' left'
+  const open = 6 - lineupIds().length
+  const perSpot = v.salary <= CAP && open > 0 ? ` <span class="perspot" title="Average salary left for each open spot (a Captain costs 1.5x)">· ${money(v.salaryLeft / open)}/spot</span>` : ''
+  sal.querySelector('.left').innerHTML = (v.salary > CAP ? money(v.salary - CAP) + ' over' : money(v.salaryLeft) + ' left') + perSpot
   const split = document.getElementById('split')
   const h = S.meta.home, a = S.meta.away
   const n = v.split[h] + v.split[a]
@@ -2974,42 +3535,28 @@ function renderLineup(v) {
   else { msg.textContent = v.errors.join(' · '); msg.className = 'msg ' + (lineupComplete() || v.salary > CAP ? 'bad' : '') }
   document.getElementById('undo-b').disabled = !S.undo.length
   document.getElementById('redo-b').disabled = !S.redo.length
-  renderSaved()
 }
 
 function flashMsg(text) { S.flash = text; renderLineup(localValidate(S.lineup)) }
 
-// ---- saved lineups (browser only; localStorage may be unavailable, so every access is wrapped) ----
-const SAVE_KEY = 'lineuplab-tgff.saved.v1'
-function loadSaved() { try { return JSON.parse(localStorage.getItem(SAVE_KEY) || '[]') } catch (e) { return [] } }
-function storeSaved(list) { try { localStorage.setItem(SAVE_KEY, JSON.stringify(list)) } catch (e) { /* storage blocked: saving is a convenience only */ } }
-
+// ---- Save (D17): adds the finished lineup to the Saved lineups view (store.js); the builder is left as it is ----
 function saveLineup() {
   if (!lineupComplete()) { flashMsg('Fill all six slots before saving'); return }
-  const list = loadSaved()
-  const cpt = S.byId.get(S.lineup.cpt)
-  const key = JSON.stringify(S.lineup)
-  if (list.some(x => JSON.stringify({ cpt: x.cpt, flex: x.flex }) === key)) { flashMsg('Already saved'); return }
-  const a = S.analysis
-  list.unshift({ name: `${lastName(cpt.name)} CPT`, cpt: S.lineup.cpt, flex: S.lineup.flex.slice(), roi: a ? a.ev.roi : null, copies: a ? a.uniqueness.expectedCopies : null, ts: Date.now() })
-  storeSaved(list.slice(0, 12))
-  renderSaved()
-}
-
-function renderSaved() {
-  const el = document.getElementById('saved')
-  let list = loadSaved()
-  const { key, dir } = S.savedSort
-  if (key) list = list.map((x, i) => Object.assign({ _i: i }, x)).sort((p, q) => ((p[key] ?? -Infinity) < (q[key] ?? -Infinity) ? -1 : (p[key] ?? -Infinity) > (q[key] ?? -Infinity) ? 1 : 0) * dir)
-  else list = list.map((x, i) => Object.assign({ _i: i }, x))
-  const cur = JSON.stringify(S.lineup)
-  const head = list.length ? `<span class="svh"><span>Saved</span>${[['roi', 'ROI'], ['copies', 'copies'], ['ts', 'time']].map(([k, l]) => `<button class="lnk ${key === k ? 'on' : ''}" data-sort="${k}">${l}${key === k ? (dir > 0 ? ' ▲' : ' ▼') : ''}</button>`).join('')}</span>` : ''
-  el.innerHTML = head + list.map(x => {
-    const on = JSON.stringify({ cpt: x.cpt, flex: x.flex }) === cur
-    const stats = x.roi == null ? '' : `<span class="${cls(x.roi)}">${signed(x.roi * 100, 0, '%')}</span><span class="dim">${x.copies != null ? x.copies.toFixed(1) + ' cp' : ''}</span>`
-    const names = [x.cpt, ...x.flex].map(id => { const p = S.byId.get(id); return p ? p.name : id }).join(', ')
-    return `<span class="sv ${on ? 'on' : ''}" data-i="${x._i}" title="Load: CPT ${esc(names)}"><b>${esc(x.name)}</b>${stats}<button class="del" data-del="${x._i}" title="Forget this saved lineup">×</button></span>`
-  }).join('')
+  const key = savedDupKey(S.lineup.cpt, S.lineup.flex)
+  const stats = S.analysis && S.analysisFor === key ? savedStatsFrom(S.analysis, S.contest) : null   // only an analysis of THIS lineup
+  const res = savedStoreAdd(S.lineup, S.byId, stats)
+  if (res.status === 'dup') { showToast(`Already saved as #${res.record.seq}`, 'View', () => savedShow(res.record.uid)); return }
+  if (res.status !== 'saved') return
+  const uid = res.record.uid, seq = res.record.seq
+  if (!stats) savedScoreQueue(res.record)      // saved before its own analysis landed: scored as soon as the model can
+  const view = () => savedShow(uid)
+  const lost = !SAVED_STATE.localOk && !savedStoreHasDb()
+  showToast(lost ? `Saved as #${seq}, but this browser isn't keeping saved lineups; they'll be lost on reload` : `Saved as #${seq}`, 'View', view)
+  res.sync.then(st => {
+    const r = savedStoreFind(uid), now = r ? r.seq : seq      // a db read may move it to the next free number
+    if (st === 'write-failed' || st === 'load-failed') showToast(`#${now} saved here; will sync when Claude is reachable`, 'View', view)
+    else if (now !== seq) showToast(`Saved as #${now}`, 'View', view)
+  })
 }
 
 function lineupHtml() {
@@ -3017,8 +3564,7 @@ function lineupHtml() {
 <h2>Lineup <span class="dim">· DK Showdown · $50,000 cap</span><span class="right"><button class="btn sm" id="undo-b" title="Undo (Ctrl+Z)">↶ undo</button> <button class="btn sm" id="redo-b" title="Redo (Ctrl+Y)">↷</button></span></h2>
 <div class="slots" id="slots"></div>
 <div class="salary" id="salary"><span class="spent" title="Salary spent (Captain at 1.5x)">$0 spent</span><span class="bar"><i></i></span><span class="left" title="Salary left under the $50,000 cap">$50,000 left</span></div>
-<div class="foot"><span class="split" id="split"></span><span class="msg" id="lmsg"></span><button class="btn sm" id="clear-b" title="Empty every slot (Undo available)">Clear</button><button class="btn sm primary" id="save-b" title="Keep this lineup in this browser to reload or compare">Save</button></div>
-<div class="saved" id="saved"></div>
+<div class="foot"><span class="split" id="split"></span><span class="msg" id="lmsg"></span><button class="btn sm" id="clear-b" title="Empty every slot (Undo available)">Clear</button><button class="btn sm primary" id="save-b" title="Add this lineup to Saved lineups (the builder stays as it is)">Save</button></div>
 </div>`
 }
 
@@ -3038,15 +3584,6 @@ function bindLineup() {
   document.getElementById('save-b').addEventListener('click', saveLineup)
   document.getElementById('undo-b').addEventListener('click', undoEdit)
   document.getElementById('redo-b').addEventListener('click', redoEdit)
-  document.getElementById('saved').addEventListener('click', ev => {
-    const so = ev.target.closest('button[data-sort]')
-    if (so) { const k = so.dataset.sort; S.savedSort = S.savedSort.key === k ? { key: k, dir: -S.savedSort.dir } : { key: k, dir: -1 }; renderSaved(); return }
-    const d = ev.target.closest('button[data-del]')
-    if (d) { const l = loadSaved(); l.splice(+d.dataset.del, 1); storeSaved(l); renderSaved(); return }
-    const sv = ev.target.closest('.sv'); if (!sv) return
-    const x = loadSaved()[+sv.dataset.i]; if (!x) return
-    pushUndo(); S.lineup = { cpt: x.cpt, flex: x.flex.slice() }; S.selected = null; onLineupEdit()
-  })
   bindDragDrop()
 }
 
@@ -3080,6 +3617,279 @@ function bindDragDrop() {
       onLineupEdit()
     }
   })
+}
+
+
+// ---- src/ui/saved.js ----
+// The Saved lineups view (ruling D17), reached from the Build | Saved lineups switch under the header.
+// Cards in save order (#1 first) with rename, Load and Delete (inline confirm); "Only lineups with:" player filter
+// (AND across chips; each chip is CPT, FLEX or Any — Adam 2026-10-12); exposure table over the lineups shown.
+// Data comes from store.js (savedStore*).
+
+const SAVED_UI = { filter: [], expSort: { key: 'count', dir: -1 }, renaming: null, confirmDel: null, focus: null }
+
+// ---- late scoring: Save never waits for the model. A lineup saved before its own analysis landed is queued here
+// (this visit only); the builder's analysis of the same lineup fills it, otherwise the engine scores the saved
+// lineup itself in the background once ready. A result is used only if the engine and contest are unchanged. ----
+const SAVED_SCORE = new Map()   // uid -> {cpt, flex}
+const SAVED_SCORE_FAILED = new Set()   // uids the engine could not score this visit
+let savedScoreBusy = false, savedScoreAgain = false
+
+function savedScoreQueue(rec) { SAVED_SCORE.set(rec.uid, { cpt: rec.cpt, flex: rec.flex.slice() }); savedScoreRun() }
+
+// A score without a finite ROI ex-1st (D18) cannot complete the record: it is marked failed for this visit, so
+// savedScoreRun does not re-queue it at every ready.
+function savedScoreFill(uid, stats) {
+  SAVED_SCORE.delete(uid)
+  if (!stats || savedFinite(stats.roiExFirst) == null) { SAVED_SCORE_FAILED.add(uid); savedViewRender(); return }
+  savedSyncToast(savedStoreFillStats(uid, stats), 'Scored')
+}
+
+// Called by runAnalysis when the builder's analysis lands.
+function savedScoreFromBuilder() {
+  if (!S.analysis || !S.analysisFor) return
+  for (const [uid, l] of [...SAVED_SCORE]) if (savedDupKey(l.cpt, l.flex) === S.analysisFor) savedScoreFill(uid, savedStatsFrom(S.analysis, S.contest))
+}
+
+// Called on save and whenever the engine becomes ready (start, refresh, contest change).
+async function savedScoreRun() {
+  if (savedScoreBusy) { savedScoreAgain = true; return }     // a pass is running: go round once more when it ends
+  if (!S.ready || !S.host) return
+  // every lineup on this slate still without figures (saved on an earlier visit, imported) joins the queue;
+  // one that failed to score this visit is not retried
+  // (D18: a record saved before ROI ex-1st existed counts as without figures)
+  for (const r of savedStoreList()) if (savedNeedsScore(r) && !SAVED_SCORE.has(r.uid) && !SAVED_SCORE_FAILED.has(r.uid)) SAVED_SCORE.set(r.uid, { cpt: r.cpt, flex: r.flex.slice() })
+  if (!SAVED_SCORE.size) return
+  savedViewRender()
+  savedScoreBusy = true
+  try {
+    for (const [uid, l] of [...SAVED_SCORE]) {
+      if (!SAVED_SCORE.has(uid)) continue
+      const host = S.host, contest = S.contest
+      let a = null
+      try { a = await host.analyze({ cpt: l.cpt, flex: l.flex.slice() }) }
+      catch (e) { console.warn('Saved lineups: could not score #' + uid, e); SAVED_SCORE.delete(uid); SAVED_SCORE_FAILED.add(uid); savedViewRender(); continue }
+      if (S.host !== host || S.contest !== contest || !S.ready) break      // engine or contest changed: the next ready retries
+      if (SAVED_SCORE.has(uid)) savedScoreFill(uid, savedStatsFrom(a, contest))
+    }
+  } finally {
+    savedScoreBusy = false
+    if (savedScoreAgain) { savedScoreAgain = false; savedScoreRun() }
+  }
+}
+const SAVED_ROLES = ['CPT', 'FLEX', 'ANY']
+const SAVED_ROLE_LABEL = { CPT: 'CPT', FLEX: 'FLEX', ANY: 'Any' }
+
+// "Saved 5:22:41 PM" today, "Saved Oct 12, 5:22:41 PM" on any other day: the moment Save was pressed (seconds so two
+// quick saves read in order — Adam 2026-10-12).
+function savedWhen(iso) {
+  const d = new Date(iso)
+  if (isNaN(d)) return ''
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit' })
+  return d.toDateString() === new Date().toDateString() ? `Saved ${time}` : `Saved ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${time}`
+}
+
+function savedSel(attr, v) { return `[${attr}="${typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(v) : String(v).replace(/["\\]/g, '\\$&')}"]` }
+
+// Team tag from a saved snapshot: the team text is escaped here because teamTag writes it as markup.
+function savedTeamTag(p) { return p.team ? teamTag({ team: esc(p.team) }) : '' }
+
+function savedChip(id) { return SAVED_UI.filter.find(c => c.id === id) || null }
+
+// A name (or count) that adds its player to the filter with `role`; lit when his chip already covers that role.
+function savedPickBtn(id, name, role, label, extra) {
+  const c = savedChip(id)
+  const on = c && (c.role === role || c.role === 'ANY' || role === 'ANY')
+  const what = role === 'ANY' ? esc(name) : `${role} ${esc(name)}`
+  return `<button type="button" class="svpick${on ? ' on' : ''}${extra ? ' ' + extra : ''}" data-pick="${esc(id)}" data-pname="${esc(name)}" data-role="${role}" title="${c && c.role === role ? 'Stop filtering by ' + what : 'Show only lineups with ' + what}">${label == null ? esc(name) : label}</button>`
+}
+
+function savedStatTile(label, val, klass, tip) {
+  return `<span class="svstat ${klass || ''}" title="${esc(tip)}"><b>${val}</b><i>${label}</i></span>`
+}
+
+function savedStatsHtml(r) {
+  const s = r.stats
+  if (!s && SAVED_SCORE.has(r.uid)) return `<div class="svstats">${['top 1%', 'copies', 'ROI ex-1st'].map(l => savedStatTile(l, '<span class="svwait">scoring…</span>', 'wait', 'The model is scoring this lineup; the figures fill in when it finishes.')).join('')}</div>`
+  if (!s) return `<div class="svstats"><span class="svunscored" title="No figures yet for this lineup; the model scores it once it is ready.">Not scored</span></div>`
+  const ctx = s && s.contest ? ` Scored for the ${money(s.contest.entryFee)} · ${Number(s.contest.size).toLocaleString('en-US')}-entry contest.` : ''
+  const none = 'Not captured: the model was not ready when this lineup was saved.'
+  const top1 = s && s.top1pct != null ? pct(s.top1pct, 1) : '—'
+  const cop = s && s.copies != null ? s.copies.toFixed(s.copies < 10 ? 2 : 1) : '—'
+  // D18: the tile shows ROI without first place; first place as odds and the full ROI sit in its hover
+  const rx = s && s.roiExFirst != null ? s.roiExFirst : null
+  const roi = rx != null ? signed(rx * 100, 0, '%') : '—'
+  const roiTip = rx != null
+    ? `ROI without first place: expected return per dollar from every finish except first.${s.pFirst != null && s.sims != null ? ` 1st: ${winsFirstOdds(s.pFirst, s.sims)}.` : ''}${s.roi != null ? ` Full ROI incl. 1st (swings a lot): ${signed(s.roi * 100, 0, '%')}.` : ''}` + ctx
+    : SAVED_SCORE.has(r.uid) ? 'Saved before ROI without first place existed; the model is re-scoring it.' : (s.roi != null ? `Saved before ROI without first place existed; it is re-scored once the model is ready. Full ROI incl. 1st was ${signed(s.roi * 100, 0, '%')}.` : none)
+  return `<div class="svstats">${savedStatTile('top 1%', top1, '', s && s.top1pct != null ? 'Chance this lineup finishes in the top 1% of the field.' + ctx : none)}${savedStatTile('copies', cop, '', s && s.copies != null ? 'Expected duplicate copies of this lineup in the field.' + ctx : none)}${savedStatTile('ROI ex-1st', roi, rx != null ? cls(rx) : '', roiTip)}</div>`
+}
+
+function savedRowHtml(p) {
+  const isC = p.slot === 'CPT'
+  const live = S.byId.get(p.id)
+  const who = { id: p.id, name: p.name, team: esc(p.team), pos: p.pos }
+  const tip = `${p.name}${p.team ? ' · ' + p.team : ''}${p.pos ? ' ' + p.pos : ''}${live ? '' : ' · no longer on the board'}`
+  return `<div class="svrow${isC ? ' cpt' : ''}${p.team ? ' ' + who.team : ''}${live ? '' : ' gone'}" title="${esc(tip)}"><span class="svlab">${isC ? 'CPT' : 'FLEX'}</span><span class="svdot${p.team ? ' ' + who.team : ''}"></span>${savedPickBtn(p.id, p.name, isC ? 'CPT' : 'FLEX')}<span class="svteam">${who.team}</span><span class="svsal">${p.salary != null ? money(p.salary) : '—'}</span></div>`
+}
+
+function savedCardHtml(r, cur) {
+  const nameHtml = SAVED_UI.renaming === r.uid
+    ? `<span class="svren"><input type="text" maxlength="60" data-ren-input="${esc(r.uid)}" value="${esc(r.name)}" title="Enter saves, Esc cancels"><button class="btn sm primary" data-act="ren-save" data-uid="${esc(r.uid)}" title="Save the name">✓</button><button class="btn sm" data-act="ren-cancel" title="Cancel">×</button></span>`
+    : `<button type="button" class="svname" data-act="ren-start" data-uid="${esc(r.uid)}" title="Click to rename">${esc(r.name)}</button>`
+  const left = r.salary != null ? CAP - r.salary : null
+  const totals = `<div class="svtot"><span title="${r.salary != null ? money(r.salary) + ' used' : 'Salary unknown'}">${r.salary != null ? (left < 0 ? money(-left) + ' over' : money(left) + ' left') : 'salary —'}</span><span class="dim">·</span><span title="Total projection (Captain x1.5), from TwoGunGPT when saved">Proj <b>${r.proj != null ? r.proj.toFixed(1) : '—'}</b></span></div>`
+  const inB = cur === savedDupKey(r.cpt, r.flex)
+  const acts = SAVED_UI.confirmDel === r.uid
+    ? `<div class="svacts confirm"><span class="svconfirm">Delete #${r.seq}?</span><span class="spacer"></span><button class="btn sm danger" data-act="del-yes" data-uid="${esc(r.uid)}">Yes</button><button class="btn sm" data-act="del-no">No</button></div>`
+    : `<div class="svacts"><button class="btn sm primary" data-act="load" data-uid="${esc(r.uid)}" title="Put this lineup in the builder (Undo available)">Load</button>${inB ? '<span class="svin" title="This lineup is in the builder now">in builder</span>' : ''}<span class="spacer"></span><button class="btn sm" data-act="del-start" data-uid="${esc(r.uid)}" title="Delete this saved lineup (asks first)">Delete</button></div>`
+  return `<div class="svcard${inB ? ' on' : ''}${SAVED_UI.focus === r.uid ? ' focus' : ''}" data-uid="${esc(r.uid)}">
+<div class="svhead"><span class="svnum">#${r.seq}</span>${nameHtml}</div>
+<div class="svtime" title="${esc(new Date(r.savedAt).toString())}">${esc(savedWhen(r.savedAt))}</div>
+<div class="svrows">${r.players.map(savedRowHtml).join('')}</div>
+${totals}${savedStatsHtml(r)}
+${acts}
+</div>`
+}
+
+function savedExposureHtml(list, subtitle) {
+  const ex = savedExposure(list).map(e => { const live = S.byId.get(e.id); return Object.assign(e, { proj: live ? live.projection : e.proj }) })
+  const { key, dir } = SAVED_UI.expSort
+  const rows = savedSortExposure(ex, dir, key)
+  const th = (k, label, tip, extra) => `<th class="sort${key === k ? ' on' : ''}${extra ? ' ' + extra : ''}" data-act="exp-sort" data-key="${k}" title="${tip}">${label}${key === k ? (dir > 0 ? ' ▲' : ' ▼') : ''}</th>`
+  const cnt = (e, role, n) => n ? savedPickBtn(e.id, e.name, role, String(n), 'n') : '<span class="dim">0</span>'
+  return `<div class="card svexp"><h2>Exposure <span class="dim">· ${esc(subtitle)}</span></h2>
+<table class="svexp-t"><thead><tr>${th('count', 'Exposure', 'Share of the lineups shown that hold him; click to sort')}${th('name', 'Player', 'Click to sort by name', 'l')}${th('cpt', 'CPT', 'Lineups with him at Captain (click a count to filter to Captain)')}${th('flex', 'FLEX', 'Lineups with him at FLEX (click a count to filter to FLEX)')}${th('team', 'Team', 'Click to sort by team')}${th('proj', 'Proj', 'TwoGunGPT projection (FLEX); click to sort')}</tr></thead><tbody>
+${rows.map(e => `<tr><td><b>${Math.round(e.pct)}%</b> <span class="dim">(${e.count})</span></td><td class="l">${savedPickBtn(e.id, e.name, 'ANY')}</td><td>${cnt(e, 'CPT', e.cpt)}</td><td>${cnt(e, 'FLEX', e.flex)}</td><td>${savedTeamTag(e)}</td><td>${e.proj != null ? e.proj.toFixed(1) : '—'}</td></tr>`).join('')}
+</tbody></table></div>`
+}
+
+function savedNoteHtml() {
+  const out = []
+  const n = SAVED_STATE.note
+  if (n === 'load-failed') out.push("Couldn't load your saved lineups from Claude — showing this browser's copy. It tries again on your next save or page load.")
+  if (n === 'write-failed') out.push('Saved here; will sync when Claude is reachable (on your next save or page load).')
+  if (n === 'no-sync') out.push("Sync isn't available on this copy — saved lineups stay in this browser.")
+  if (n === 'user-error') out.push("Couldn't reach Claude to sync saved lineups — showing this browser's copy; they won't sync on this visit.")
+  if (!SAVED_STATE.localOk && SAVED_STATE.dbMode !== 'ok') out.push("This browser isn't keeping saved lineups; they'll be lost on reload.")
+  return out.map(t => `<div class="svnote bad">${esc(t)}</div>`).join('')
+}
+
+function savedFilterBarHtml(shown, total) {
+  if (!SAVED_UI.filter.length) return ''
+  return `<div class="svfilter"><span class="dim">Only lineups with:</span>${SAVED_UI.filter.map(c => `<span class="svchip"><button type="button" class="svrole ${c.role}" data-cycle="${esc(c.id)}" title="Click to switch: Captain, FLEX or Any slot">${SAVED_ROLE_LABEL[c.role]}</button><span class="svcn">${esc(c.name)}</span><button type="button" class="svx" data-unpick="${esc(c.id)}" title="Stop filtering by ${esc(c.name)}">×</button></span>`).join('')}<button class="btn sm" data-act="clear-filter">Clear</button><span class="dim">showing ${shown} of ${total}</span></div>`
+}
+
+function savedViewRender() {
+  const el = document.getElementById('view-saved')
+  if (!el || el.hidden) return
+  const all = savedStoreList()
+  let body
+  if (savedStoreArchived()) body = `<div class="card svempty">Saved lineups for this slate are archived.</div>`
+  else if (!all.length) body = `<div class="card svempty">No saved lineups for this slate yet. Build one and press <b>Save</b>. <button class="btn sm primary" data-act="to-build">Go to Build</button></div>`
+  else {
+    SAVED_UI.filter = SAVED_UI.filter.filter(c => all.some(r => savedIdsOf(r).includes(c.id)))
+    const shown = savedFilter(all, SAVED_UI.filter)
+    const cur = lineupComplete() ? savedDupKey(S.lineup.cpt, S.lineup.flex) : null
+    const sub = SAVED_UI.filter.length ? `${shown.length} of ${all.length} saved lineups, filtered` : `${all.length} saved lineup${all.length === 1 ? '' : 's'}`
+    body = savedFilterBarHtml(shown.length, all.length) + (shown.length
+      ? `<div class="svlayout${shown.length === 1 ? ' one' : ''}"><div class="svgrid">${shown.map(r => savedCardHtml(r, cur)).join('')}</div>${savedExposureHtml(shown, sub)}</div>`
+      : `<div class="card svempty">No saved lineups have all of the chosen players.</div>`)
+  }
+  el.innerHTML = savedNoteHtml() + body
+  const inp = el.querySelector('input[data-ren-input]')
+  if (inp) { inp.focus(); inp.select() }
+  if (SAVED_UI.focus) {
+    const c = el.querySelector('.svcard' + savedSel('data-uid', SAVED_UI.focus))
+    if (c && c.scrollIntoView) c.scrollIntoView({ block: 'nearest' })
+    SAVED_UI.focus = null
+  }
+}
+
+// Store changed (save, delete, rename, db sync): the tab count always, the view when it is showing.
+function savedStoreChanged() {
+  const n = document.getElementById('saved-count')
+  if (n) n.textContent = `(${savedStoreList().length})`
+  if (!SAVED_UI.renaming) savedViewRender()
+}
+
+function savedLoad(uid) {
+  const r = savedStoreFind(uid); if (!r) return
+  const missing = savedIdsOf(r).filter(id => !S.byId.has(id))
+  pushUndo()
+  S.lineup = { cpt: S.byId.has(r.cpt) ? r.cpt : null, flex: r.flex.map(id => S.byId.has(id) ? id : null) }
+  S.selected = null
+  appSetPage('build')
+  onLineupEdit()
+  showToast(missing.length ? `Loaded #${r.seq}; ${missing.length} player${missing.length === 1 ? ' is' : 's are'} no longer on the board` : `Loaded #${r.seq} into the builder`, 'Undo', undoEdit)
+}
+
+// After a store write: tell him when it stayed in this browser only.
+function savedSyncToast(p, verb) {
+  if (p) p.then(st => { if (st === 'write-failed' || st === 'load-failed') showToast(`${verb} here; will sync when Claude is reachable`) })
+}
+
+function savedRenameCommit(uid) {
+  const inp = document.querySelector('input' + savedSel('data-ren-input', uid))
+  SAVED_UI.renaming = null
+  savedSyncToast(inp ? savedStoreRename(uid, inp.value) : null, 'Renamed')
+  savedViewRender()
+}
+
+// One chip per player: clicking with the role his chip already has removes it; any other role sets that role.
+function savedTogglePick(id, name, role) {
+  role = SAVED_ROLES.includes(role) ? role : 'ANY'
+  const c = savedChip(id)
+  if (c && c.role === role) SAVED_UI.filter = SAVED_UI.filter.filter(x => x.id !== id)
+  else if (c) SAVED_UI.filter = SAVED_UI.filter.map(x => x.id === id ? Object.assign({}, x, { role }) : x)
+  else SAVED_UI.filter = SAVED_UI.filter.concat([{ id, name, role }])
+  savedViewRender()
+}
+function savedCycleRole(id) {
+  SAVED_UI.filter = SAVED_UI.filter.map(x => x.id === id ? Object.assign({}, x, { role: SAVED_ROLES[(SAVED_ROLES.indexOf(x.role) + 1) % 3] }) : x)
+  savedViewRender()
+}
+
+function savedViewBind() {
+  const el = document.getElementById('view-saved')
+  el.addEventListener('click', ev => {
+    const pick = ev.target.closest('[data-pick]')
+    if (pick) { savedTogglePick(pick.dataset.pick, pick.dataset.pname, pick.dataset.role); return }
+    const cy = ev.target.closest('[data-cycle]')
+    if (cy) { savedCycleRole(cy.dataset.cycle); return }
+    const un = ev.target.closest('[data-unpick]')
+    if (un) { SAVED_UI.filter = SAVED_UI.filter.filter(x => x.id !== un.dataset.unpick); savedViewRender(); return }
+    const b = ev.target.closest('[data-act]'); if (!b) return
+    const uid = b.dataset.uid
+    switch (b.dataset.act) {
+      case 'load': savedLoad(uid); break
+      case 'ren-start': SAVED_UI.renaming = uid; SAVED_UI.confirmDel = null; savedViewRender(); break
+      case 'ren-save': savedRenameCommit(uid); break
+      case 'ren-cancel': SAVED_UI.renaming = null; savedViewRender(); break
+      case 'del-start': SAVED_UI.confirmDel = uid; SAVED_UI.renaming = null; savedViewRender(); break
+      case 'del-no': SAVED_UI.confirmDel = null; savedViewRender(); break
+      case 'del-yes': SAVED_UI.confirmDel = null; savedSyncToast(savedStoreDelete(uid), 'Deleted'); break
+      case 'clear-filter': SAVED_UI.filter = []; savedViewRender(); break
+      case 'exp-sort': {
+        const k = b.dataset.key || 'count', cur = SAVED_UI.expSort
+        SAVED_UI.expSort = cur.key === k ? { key: k, dir: -cur.dir } : { key: k, dir: k === 'name' || k === 'team' ? 1 : -1 }
+        savedViewRender(); break
+      }
+      case 'to-build': appSetPage('build'); break
+    }
+  })
+  el.addEventListener('keydown', ev => {
+    const inp = ev.target.closest('input[data-ren-input]'); if (!inp) return
+    if (ev.key === 'Enter') { ev.preventDefault(); savedRenameCommit(inp.dataset.renInput) }
+    else if (ev.key === 'Escape') { SAVED_UI.renaming = null; savedViewRender() }
+  })
+}
+
+// Show the Saved view, optionally scrolled to one card (the "View" button after a save).
+function savedShow(uid) {
+  SAVED_UI.focus = uid || null
+  if (uid) { const r = savedStoreFind(uid); if (r && savedFilter([r], SAVED_UI.filter).length === 0) SAVED_UI.filter = [] }
+  appSetPage('saved')
 }
 
 
@@ -3194,7 +4004,7 @@ function renderGauges(a, v) {
   const par = C && C.size ? 1 / (C.size + 1) : null
   // Big contests (C.subsampled): pFirst is the exact field mass above the lineup, a fraction, not a count of sims won.
   const exact = !!(C && C.subsampled)
-  const noisy = unresolved || f.pFirst < 1 / (10 * sims) || (ci && ci.lo > 0 && ci.hi / ci.lo > 10)
+  const noisy = firstTooRare(f.pFirst, sims)   // the same test as the EV gauge's "Wins 1st" row (fmt.js)
   const ciTxt = ci ? ` 90% band: ${pctRange(ci.lo, ci.hi)}.` : unresolved ? ` The sims can't resolve odds longer than about 1 in ${Math.round(sims / 2.7).toLocaleString('en-US')}.` : ''
   const parTxt = par ? ` · par ${oneIn(par)}${f.pFirst > 0 ? ` · ${f.pFirst >= par ? (f.pFirst / par).toFixed(1) + 'x par' : (par / f.pFirst).toFixed(1) + 'x below par'}` : ''}` : ''
   const headCol = vc === 'DEAD' ? 'bad' : vc === 'REAL' ? 'good' : 'gold'
@@ -3240,7 +4050,12 @@ ${workHtml([
     cmp ? `${cmp} (engine's field sample)` : ''
   ].filter(Boolean))}`
 
-  const ew = e.roi > 0 ? ['+EV', 'good'] : ['−EV', 'bad']
+  // D18: the headline is ROI without first place; first place is its own odds line; full ROI only in the working.
+  const rx = e.roiExFirst
+  const fAvgX = e.fieldAvgRoiExFirst
+  const firstEq = e.firstEquity != null ? e.firstEquity : ((Array.isArray(e.breakdown) && e.breakdown.find(b => b.label === 'first place')) || {}).equity
+  const firstOddsTxt = winsFirstOdds(e.pFirst, sims)
+  const ew = rx > 0 ? ['+EV', 'good'] : ['−EV', 'bad']
   const bd = Array.isArray(e.breakdown) ? e.breakdown.filter(b => b.equity > 0) : []
   const bdTot = bd.reduce((s, b) => s + b.equity, 0)
   const bdCols = ['#f0b429', '#4fc47f', '#5ea9f0', '#a78bfa', '#8d95a3']
@@ -3249,12 +4064,12 @@ ${workHtml([
   const bdLegend = bd.map((b, i) => `<span><i style="background:${bdCols[i % 5]}"></i>${esc(b.label)} ${money(b.equity)}</span>`).join('')
   const fee = C ? C.entryFee : null
   const ev = `
-<div class="head"><div class="l1"><span class="big ${ew[1]}" title="${TIP.roi} ${ROI_NOTE}">${signed(e.roi * 100, 0, '%')}</span><span class="unit">ROI</span>${deltaChip('roi', e.roi, d => signed(d * 100, 0, '%'))}</div><div class="verdict ${ew[1] === 'good' ? 'REAL' : 'DEAD'}" title="Raw ROI is what you earn per dollar. The field averages ${e.fieldAvgRoi != null ? signed(e.fieldAvgRoi * 100, 0, '%') : 'below zero'} (the rake: −10% in the published Wildcat, about −15% where the payout is assumed).">${ew[0]}${e.roiVsField != null ? ` · ${signed(e.roiVsField * 100, 0, '%')} vs field` : ''}${e.roiPercentileVsField != null ? ` · beats ${Math.round(e.roiPercentileVsField)}% of it` : ''}</div></div>
-<div class="chart" title="${TIP.roi}${C && C.fieldAvgRoi != null ? ` Dashed gold: the field average ${signed(C.fieldAvgRoi * 100, 0, '%')} (the rake).` : ''}">${roiBar(e.roi, C ? C.fieldAvgRoi : null)}</div>
+<div class="head"><div class="l1"><span class="big ${ew[1]}" title="${TIP.roiEx} ${ROI_NOTE}">${signed(rx * 100, 0, '%')}</span><span class="unit">ROI without 1st</span>${deltaChip('roiEx', rx, d => signed(d * 100, 0, '%'))}</div><div class="verdict ${ew[1] === 'good' ? 'REAL' : 'DEAD'}" title="ROI without first place: what you earn per dollar from every finish except first. The field averages ${fAvgX != null ? signed(fAvgX * 100, 0, '%') : 'below zero'} on the same basis (each field entry's own ROI without first place, averaged).">${ew[0]}${e.roiExFirstVsField != null ? ` · ${signed(e.roiExFirstVsField * 100, 0, '%')} vs field` : ''}${e.roiExFirstPercentileVsField != null ? ` · beats ${Math.round(e.roiExFirstPercentileVsField)}% of it` : ''}</div></div>
+<div class="chart" title="${TIP.roiEx}${fAvgX != null ? ` Dashed gold: the field average without first place, ${signed(fAvgX * 100, 0, '%')}.` : ''}">${roiBar(rx, fAvgX != null ? fAvgX : null)}</div>
 <div class="rows">
-${row('Expected return', e.expectedWinnings != null ? money(e.expectedWinnings) : '–', 'Average prize money per entry over the simulations, after splitting with copies.', fee ? `on a ${money(fee)} entry` : '')}
-${e.splitLoss != null ? row('Lost to splitting', money(e.splitLoss), 'What these same finishes would pay if you were not sharing them with exact copies of your lineup.') : ''}
-${row('P(first)', pct(e.pFirst, 2), TIP.pFirst)}
+${row('Wins 1st', firstOddsTxt, `${TIP.pFirst} First place is left out of the ROI above and shown here as odds: one simulated first-place win swings full ROI by about 100 points in a big contest. P(first) ${pct(e.pFirst, 3)}.`, firstEq != null ? `worth ${firstEq < 10 ? '$' + firstEq.toFixed(2) : money(firstEq)}` : '')}
+${row('Expected return', e.expectedWinnings != null && firstEq != null ? money(e.expectedWinnings - firstEq) : '–', 'Average prize money per entry from every finish except first, after splitting with copies.', fee ? `on a ${money(fee)} entry` : '')}
+${e.splitLoss != null ? row('Lost to splitting', money(e.splitLoss), 'What these same finishes (first place included) would pay if you were not sharing them with exact copies of your lineup.') : ''}
 ${row('P(top 1%)', pct(e.pTop1pct), TIP.pTop1)}
 ${row('P(cash)', pct(e.pCash, 0), TIP.pCash)}
 ${row('Avg finish', e.avgFinishPct != null ? e.avgFinishPct.toFixed(0) + '%' : '–', TIP.avgFinish)}
@@ -3262,12 +4077,14 @@ ${row('Avg finish', e.avgFinishPct != null ? e.avgFinishPct.toFixed(0) + '%' : '
 ${bdBar ? `<div class="chart mixwrap" title="Expected return split by finish band">${bdBar}</div><div class="legend">${bdLegend}</div>` : ''}
 <div class="note">${C ? `${money(C.entryFee)} · ${C.size.toLocaleString('en-US')} entries · ${money(C.prizePool)} pool, ${money(C.firstPrize)} to first${C.assumed ? ' (payout shape assumed, D6)' : ' (published)'}` : ''}</div>
 ${workHtml([
-    e.expectedWinnings != null && fee ? `ROI = (expected return ${money(e.expectedWinnings)} − fee ${money(fee)}) ÷ ${money(fee)} = ${signed(e.roi * 100, 1, '%')}` : `ROI ${signed(e.roi * 100, 1, '%')} (engine)`,
-    `P(first) ${pct(e.pFirst, 2)} with a win split about ${(1 + u.expectedCopies).toFixed(1)} ways; P(top 1%) ${pct(e.pTop1pct, 2)}; P(cash) ${pct(e.pCash, 1)}`,
-    C && C.fieldAvgRoi != null ? `field average ROI ${signed(C.fieldAvgRoi * 100, 1, '%')} = prize pool ÷ total fees − 1` : '',
+    e.expectedWinnings != null && fee && firstEq != null ? `ROI without 1st = (expected return ${money(e.expectedWinnings)} − first-place share ${money(firstEq)} − fee ${money(fee)}) ÷ ${money(fee)} = ${signed(rx * 100, 1, '%')}` : `ROI without 1st ${signed(rx * 100, 1, '%')} (engine)`,
+    e.expectedWinnings != null && fee ? `ROI incl. 1st (swings a lot) = (expected return ${money(e.expectedWinnings)} − fee ${money(fee)}) ÷ ${money(fee)} = ${signed(e.roi * 100, 1, '%')}` : `ROI incl. 1st (swings a lot) ${signed(e.roi * 100, 1, '%')}`,
+    `Wins 1st ${firstOddsTxt}: P(first) ${pct(e.pFirst, 3)} with a win split about ${(1 + u.expectedCopies).toFixed(1)} ways; P(top 1%) ${pct(e.pTop1pct, 2)}; P(cash) ${pct(e.pCash, 1)}`,
+    fAvgX != null ? `field average ROI without 1st ${signed(fAvgX * 100, 1, '%')} = the average, over the engine's sampled field entries, of each entry's own ROI without first place (a tied-first share counts as first, as for this lineup)` : '',
+    C && C.fieldAvgRoi != null ? `field average ROI incl. 1st ${signed(C.fieldAvgRoi * 100, 1, '%')} = prize pool ÷ total fees − 1 (the rake)` : '',
     ...bd.map(b => `${esc(b.label)}: ${money(b.equity)} of expected return`),
     e.splitLoss != null ? `lost to splitting with copies: ${money(e.splitLoss)}` : '',
-    'Rule: +EV means raw ROI above 0 (what you earn per dollar); "vs field" compares with the field average after the rake',
+    'Rule: +EV means ROI without first place above 0 (what you earn per dollar from every other finish); "vs field" compares with the field average on the same basis. First place is left out because one simulated win swings full ROI by about 100 points in a big contest.',
     ROI_NOTE
   ].filter(Boolean))}`
 
@@ -3321,10 +4138,11 @@ function renderLower(a) {
 
 function swapOptHtml(slot, o) {
   const p = S.byId.get(o.id); if (!p) return ''
-  const base = S.analysis && S.analysis.ev ? S.analysis.ev.roi : null
-  return `<button class="opt" data-slot="${slot}" data-id="${o.id}" title="Swap in ${esc(p.name)}: ${roiFromTo(base, o)}; copies ${signed(o.deltaCopies, 2)}; salary ${signedMoney(o.deltaSalary)}${o.approx ? '; approximate in this contest size' : ''}">
+  // D18: the swap explorer reads ROI without first place
+  const base = S.analysis && S.analysis.ev ? S.analysis.ev.roiExFirst : null
+  return `<button class="opt" data-slot="${slot}" data-id="${o.id}" title="Swap in ${esc(p.name)}: ${roiExFromTo(base, o)}; copies ${signed(o.deltaCopies, 2)}; salary ${signedMoney(o.deltaSalary)}${o.approx ? '; approximate in this contest size' : ''}">
 <span class="n"><b>${esc(p.name)}</b><span class="mu">${teamTag(p)}</span></span>
-<span class="d ev ${cls(o.deltaEv)}" title="${TIP.dEv} ${roiFromTo(base, o)}.">${roiPts(o.deltaEv)}</span>
+<span class="d ev ${cls(o.deltaEvExFirst)}" title="${TIP.dEvEx} ${roiExFromTo(base, o)}.">${roiPts(o.deltaEvExFirst)}</span>
 <span class="d ${cls(-o.deltaCopies)}" title="${TIP.dCopies}">${signed(o.deltaCopies, 1)}</span>
 <span class="d muted" title="${TIP.dSal}">${signedMoney(o.deltaSalary)}</span></button>`
 }
@@ -3350,7 +4168,7 @@ function needsCardHtml() {
 function lowerHtml() {
   return `<div class="lower">
 <div class="card"><h2>Game scripts <span class="right">tile heat = share of this lineup's wins</span></h2><div class="tiles" id="tiles"></div></div>
-<div class="card swaps"><h2><button class="lnk" id="swaps-t" title="The top three swaps per slot already sit under each lineup slot; this opens the full table">▸ More swaps</button><span class="right">click a name to make the swap · ΔROI in points · Δcopies · Δsalary · sort: <button class="lnk on" data-ssort="deltaEv">ΔROI</button> <button class="lnk" data-ssort="deltaCopies">Δcopies</button> <button class="lnk" data-ssort="deltaSalary">Δ$</button></span></h2><div class="grid" id="swap-grid" hidden></div></div>
+<div class="card swaps"><h2><button class="lnk" id="swaps-t" title="The top three swaps per slot already sit under each lineup slot; this opens the full table">▸ More swaps</button><span class="right">click a name to make the swap · ΔROI excl. 1st in points · sort: <button class="lnk on" data-ssort="deltaEvExFirst" title="${TIP.dEvEx}">ΔROI ex-1st</button> <button class="lnk" data-ssort="deltaCopies">Δcopies</button> <button class="lnk" data-ssort="deltaSalary">Δ$</button></span></h2><div class="grid" id="swap-grid" hidden></div></div>
 </div>`
 }
 
@@ -3365,7 +4183,7 @@ function bindLower() {
   })
   document.querySelectorAll('button[data-ssort]').forEach(b => b.addEventListener('click', () => {
     const k = b.dataset.ssort
-    S.swapSort = S.swapSort.key === k ? { key: k, dir: -S.swapSort.dir } : { key: k, dir: k === 'deltaEv' ? -1 : 1 }
+    S.swapSort = S.swapSort.key === k ? { key: k, dir: -S.swapSort.dir } : { key: k, dir: k === 'deltaEvExFirst' ? -1 : 1 }
     document.querySelectorAll('button[data-ssort]').forEach(x => x.classList.toggle('on', x.dataset.ssort === k))
     renderSwaps(S.analysis)
   }))
@@ -3387,11 +4205,11 @@ function bindLower() {
 const TAKEAWAY_RULES = {
   copiesPctlGood: 60,       // fewer copies than this % of the field: coloured green
   copiesPctlBad: 30,        // fewer copies than fewer than this % of the field: coloured red (chalkier than most)
-  roiPctlStrong: 80,        // ROI percentile vs the field at or above this: "better than most of the field"
+  roiPctlStrong: 80,        // ROI-without-1st percentile vs the field at or above this: "better than most of the field"
   scriptDominant: 0.6,      // one script holds this share of wins or more: "lives on one script"
-  swapWorth: 0.03,          // a swap must add at least this much raw ROI to be suggested
+  swapWorth: 0.03,          // a swap must add at least this much ROI without first place to be suggested (D18)
   needsTop: 5,              // a player must hit his top X% or better: "needs a nuke game"
-  ciWide: 10                // winsCI hi/lo above this (or pFirst under 1/(10 x sims)): the win rate is too noisy to lead with
+  ciWide: 10                // documents firstTooRare (fmt.js): winsCI hi/lo above this (or pFirst under 1/(10 x sims)) is too noisy to lead with
 }
 
 function takeawayBullets(a, v) {
@@ -3407,20 +4225,25 @@ function takeawayBullets(a, v) {
   out.push({ cls: cpCls, text: `About ${u.expectedCopies < 10 ? u.expectedCopies.toFixed(1) : Math.round(u.expectedCopies)} copies (a win splits ${(1 + u.expectedCopies).toFixed(1)} ways)` + (cp != null ? `; fewer copies than ${Math.round(cp)}% of this field.` : '.'), target: 'g-uniq' })
 
   // 2. EV: lead with the finish band carrying the most equity; raw ROI decides +EV.
-  const bd = Array.isArray(e.breakdown) ? e.breakdown.filter(b => b.equity > 0) : []
+  // D18: the lead band is read among the finishes the headline counts (first place left out)
+  const bd = Array.isArray(e.breakdown) ? e.breakdown.filter(b => b.equity > 0 && b.label !== 'first place') : []
   const top = bd.slice().sort((x, y) => y.equity - x.equity)[0]
   const tot = bd.reduce((s, b) => s + b.equity, 0)
   const evLead = top && tot > 0 ? `most of the return (${Math.round(top.equity / tot * 100)}%) comes from ${top.label}` : (e.expectedWinnings != null ? `expected return ${money(e.expectedWinnings)}` : '')
-  if (f.verdict === 'DEAD') out.push({ cls: 'bad', text: `Dead: it never finished first in the simulations${u.warning ? '; unique only because nobody plays a lineup that cannot win' : ''}.`, target: 'g-feas' })
-  if (e.roi > 0) out.push({ cls: 'good', text: `+EV: ROI ${signed(e.roi * 100, 0, '%')}` + (e.roiPercentileVsField != null && e.roiPercentileVsField >= R.roiPctlStrong ? `, better than ${Math.round(e.roiPercentileVsField)}% of the field` : '') + (evLead ? `; ${evLead}.` : '.'), target: 'g-ev' })
-  else out.push({ cls: 'bad', text: `Not +EV: ROI ${signed(e.roi * 100, 0, '%')}` + (e.roiPercentileVsField != null ? ` (still better than ${Math.round(e.roiPercentileVsField)}% of the field)` : '') + (evLead ? `; ${evLead}.` : '.'), target: 'g-ev' })
+  // the DEAD rule allows a win: "never" only when the sims hold none (under half a win), else the rule's own bound
+  const deadSims = S.sims || 10000
+  if (f.verdict === 'DEAD') out.push({ cls: 'bad', text: `Dead: ${f.pFirst * deadSims < 0.5 ? `it never finished first in ${deadSims.toLocaleString('en-US')} sims` : 'it almost never finished first (under 2 wins per 10,000 sims)'}${u.warning ? '; unique only because nobody plays a lineup that cannot win' : ''}.`, target: 'g-feas' })
+  // D18: +EV is read on ROI without first place; first place is quoted as odds, never as ROI.
+  const rx = e.roiExFirst, rxPct = e.roiExFirstPercentileVsField
+  // (first place itself is read by bullet 3 below, as odds against par)
+  if (rx > 0) out.push({ cls: 'good', text: `+EV without first place: ROI ${signed(rx * 100, 0, '%')}` + (rxPct != null && rxPct >= R.roiPctlStrong ? `, better than ${Math.round(rxPct)}% of the field` : '') + (evLead ? `; ${evLead}.` : '.'), target: 'g-ev' })
+  else out.push({ cls: 'bad', text: `Not +EV without first place: ROI ${signed(rx * 100, 0, '%')}` + (rxPct != null ? ` (still better than ${Math.round(rxPct)}% of the field)` : '') + (evLead ? `; ${evLead}.` : '.'), target: 'g-ev' })
 
   // 3. Win rate against par, only when the simulations resolve it.
   const sims = S.sims || 10000
   // Under 2 expected wins the Wilson band is meaningless (its top is about z^2/(sims+z^2)): no band, state the resolution.
   const unresolved = f.pFirst * sims < 2
-  const ci = unresolved ? null : f.winsCI
-  const noisy = unresolved || f.pFirst < 1 / (R.ciWide * sims) || (ci && ci.lo > 0 && ci.hi / ci.lo > R.ciWide)
+  const noisy = firstTooRare(f.pFirst, sims)   // shared with both gauges (fmt.js); its 10x is R.ciWide
   if (f.verdict !== 'DEAD' && par) {
     if (noisy) out.push({ cls: 'gold', text: `First place is too rare to measure in ${sims.toLocaleString('en-US')} sims${unresolved ? ` (they can't resolve odds longer than about 1 in ${Math.round(sims / 2.7).toLocaleString('en-US')})` : ''}; it reaches the top 1% in ${pct(f.pTop1pct, 1)} of games (par 1%).`, target: 'g-feas' })
     else out.push({ cls: f.pFirst >= par ? 'good' : 'gold', text: `Wins first ${oneIn(f.pFirst)} (par for this field ${oneIn(par)}), ${f.pFirst >= par ? (f.pFirst / par).toFixed(1) + 'x par' : (par / f.pFirst).toFixed(1) + 'x below par'}.`, target: 'g-feas' })
@@ -3442,10 +4265,11 @@ function takeawayBullets(a, v) {
 
   // 6. Best single swap.
   let best = null
-  for (const s of a.swaps || []) for (const o of s.options || []) if (o.legal !== false && (!best || o.deltaEv > best.o.deltaEv)) best = { slot: s.slot, o }
-  if (best && best.o.deltaEv >= R.swapWorth) {
+  // D18: ranked and read on ROI without first place
+  for (const s of a.swaps || []) for (const o of s.options || []) if (o.legal !== false && (!best || o.deltaEvExFirst > best.o.deltaEvExFirst)) best = { slot: s.slot, o }
+  if (best && best.o.deltaEvExFirst >= R.swapWorth) {
     const cur = S.byId.get(best.slot === 'cpt' ? S.lineup.cpt : S.lineup.flex[best.slot]), nw = S.byId.get(best.o.id)
-    if (cur && nw) out.push({ cls: 'blue', text: `Best fix: ${lastName(cur.name)} → ${lastName(nw.name)}${best.slot === 'cpt' ? ' at CPT' : ''}: ${roiFromTo(e.roi, best.o)} (${roiPts(best.o.deltaEv)}), ${signed(best.o.deltaCopies, 1)} copies, ${signedMoney(best.o.deltaSalary)}${best.o.approx ? ' (approx.)' : ''}.`, swap: best })
+    if (cur && nw) out.push({ cls: 'blue', text: `Best fix: ${lastName(cur.name)} → ${lastName(nw.name)}${best.slot === 'cpt' ? ' at CPT' : ''}: ${roiExFromTo(e.roiExFirst, best.o)} (${roiPts(best.o.deltaEvExFirst)}), ${signed(best.o.deltaCopies, 1)} copies, ${signedMoney(best.o.deltaSalary)}${best.o.approx ? ' (approx.)' : ''}.`, swap: best })
   }
   return out.slice(0, 4)
 }
@@ -3625,10 +4449,10 @@ const S = {
   snapshot: null, meta: null, players: [], byId: new Map(), assets: { teams: {}, players: {} },
   lineup: { cpt: null, flex: [null, null, null, null, null] },
   selected: null, undo: [], redo: [], flash: null,
-  sort: { key: 'ceiling', dir: -1 }, mode: 'flex', savedSort: { key: null, dir: -1 }, view: 'table',
+  sort: { key: 'ceiling', dir: -1 }, mode: 'flex', view: 'table', page: 'build', analysisFor: null,
   filters: { team: null, pos: null, q: '', minSal: 0, maxSal: 1e9, fits: false },
   ready: false, progressNote: '', host: null, analysis: null, runSeq: 0, timer: null, prevHead: {},
-  contest: null, sims: 10000, swapSort: { key: 'deltaEv', dir: -1 }, needsSort: { key: 'pctlOfThat', dir: -1 }
+  contest: null, sims: 10000, swapSort: { key: 'deltaEvExFirst', dir: -1 }, needsSort: { key: 'pctlOfThat', dir: -1 }
 }
 
 // Contest presets (Adam plays big-field $3 and $20 contests; the $333 Wildcat is TwoGunGPT's sim contest).
@@ -3677,6 +4501,20 @@ function headerHtml(m) {
 <span class="contest" id="contest" title="${CONTEST_NOTE}"><span class="dim">Contest</span><select id="contest-sel" class="btn sm">${opts}</select><span id="contest-custom" class="custom" hidden><input id="c-fee" type="number" min="0.25" step="0.25" placeholder="fee $" title="Entry fee"><input id="c-size" type="number" min="2" step="1" placeholder="entries" title="Field size"><button class="btn sm primary" id="c-go">Apply</button></span></span>
 ${refreshButtonHtml()}
 </div>`
+}
+
+// Build | Saved lineups switch (D17), directly under the header; the chosen page survives re-renders and reloads.
+const APP_PAGE_KEY = 'lineuplab-tgff.page'
+function appPageTabsHtml() {
+  return `<div class="vtabs" id="vtabs" role="tablist"><button type="button" role="tab" data-page="build">Build</button><button type="button" role="tab" data-page="saved">Saved lineups <span id="saved-count">(0)</span></button></div>`
+}
+function appSetPage(page) {
+  S.page = page === 'saved' ? 'saved' : 'build'
+  document.getElementById('view-build').hidden = S.page !== 'build'
+  document.getElementById('view-saved').hidden = S.page !== 'saved'
+  for (const b of document.querySelectorAll('#vtabs [data-page]')) { const on = b.dataset.page === S.page; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false') }
+  try { localStorage.setItem(APP_PAGE_KEY, S.page) } catch (e) { /* storage may be blocked; the tab is a convenience */ }
+  if (S.page === 'saved') { savedViewRender(); window.scrollTo(0, 0) }
 }
 
 function setProgress(p) {
@@ -3730,6 +4568,8 @@ async function runAnalysis() {
     if (seq !== S.runSeq) return
     if (S.host.hasSwaps && !a.swaps) { a.swaps = await S.host.swaps(lineup); if (seq !== S.runSeq) return }
     S.analysis = a
+    S.analysisFor = savedDupKey(lineup.cpt, lineup.flex)   // Save captures gauges only from an analysis of the same lineup
+    savedScoreFromBuilder()                                 // and fills a lineup saved a moment before this landed
     renderGauges(a, ev)
     renderTakeaways(a, ev)
     renderLower(a)
@@ -3830,6 +4670,7 @@ function startEngine(snapshot) {
     renderAssumptions(host)
     renderPool()
     onLineupEdit()
+    savedScoreRun()      // lineups saved before the model was ready
   }).catch(e => {
     console.error(e)
     const el = document.getElementById('progress')
@@ -3845,7 +4686,7 @@ function applySnapshot(snapshot) {
   S.byId = new Map(S.players.map(p => [p.id, p]))
   if (S.lineup.cpt && !S.byId.has(S.lineup.cpt)) S.lineup.cpt = null
   S.lineup.flex = S.lineup.flex.map(id => (id && S.byId.has(id)) ? id : null)
-  S.ready = false; S.analysis = null
+  S.ready = false; S.analysis = null; S.analysisFor = null; S.runSeq++   // an in-flight analysis of the old data must not land
   document.getElementById('pill-txt').textContent = `TwoGunGPT data · board updated ${snapshot.meta.boardUpdated}`
   renderPool(); onLineupEdit()
   startEngine(snapshot)
@@ -3855,7 +4696,7 @@ async function changeContest(c) {
   const spec = contestSpec(c)
   S.contest = Object.assign({}, spec)
   if (!S.host || !S.ready) return
-  S.ready = false; S.analysis = null; S.prevHead = {}
+  S.ready = false; S.analysis = null; S.analysisFor = null; S.prevHead = {}; S.runSeq++   // nor one sized for the old contest
   setProgress({ pct: 10, note: `Re-sizing the field to ${c.size.toLocaleString('en-US')} entries…` })
   try {
     await S.host.setContest({ size: spec.size, entryFee: spec.entryFee, prizePool: spec.prizePool, firstPrize: spec.firstPrize })
@@ -3864,6 +4705,7 @@ async function changeContest(c) {
     const el = document.getElementById('progress'); el.classList.add('done'); el.querySelector('.bar i').style.width = '100%'
     el.querySelector('.txt').textContent = `Field re-sized: ${contestLabel(S.contest)}`
     onLineupEdit()
+    savedScoreRun()
   } catch (e) { console.error(e); setProgress({ pct: 0, note: 'Could not re-size the field: ' + (e.message || e) }) }
 }
 
@@ -3891,10 +4733,15 @@ function init() {
   S.contest = contestSpec(CONTESTS[0])
   try { S.view = localStorage.getItem('lineuplab-tgff.view') || 'table' } catch (e) { /* ignore */ }
   const app = document.getElementById('app')
-  app.innerHTML = headerHtml(S.meta) + `<div class="cols">${poolHtml()}<div class="rcol">${lineupHtml()}<div class="card takeaways" id="takeaways"></div><div class="gauges" id="gauges"></div>${needsCardHtml()}</div></div>` + lowerHtml() + `<div class="assume" id="assume"></div>`
+  app.innerHTML = headerHtml(S.meta) + appPageTabsHtml() + `<div id="view-build"><div class="cols">${poolHtml()}<div class="rcol">${lineupHtml()}<div class="card takeaways" id="takeaways"></div><div class="gauges" id="gauges"></div>${needsCardHtml()}</div></div>` + lowerHtml() + `</div><div id="view-saved" class="saved-view" hidden></div><div class="assume" id="assume"></div>`
   initTheme()
   parseHash()
-  bindPool(); bindLineup(); bindLower(); bindKeys(); bindTakeaways(); bindContest(); initRefresh()
+  bindPool(); bindLineup(); bindLower(); bindKeys(); bindTakeaways(); bindContest(); initRefresh(); savedViewBind()
+  document.getElementById('vtabs').addEventListener('click', ev => { const b = ev.target.closest('[data-page]'); if (b) appSetPage(b.dataset.page) })
+  let page = 'build'
+  try { page = localStorage.getItem(APP_PAGE_KEY) || 'build' } catch (e) { /* ignore */ }
+  appSetPage(page)
+  savedStoreInit(S.meta, S.byId, savedStoreChanged)
   renderPool()
   const v = localValidate(S.lineup)
   renderLineup(v)
