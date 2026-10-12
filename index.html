@@ -73,7 +73,7 @@ a { color: var(--blue); }
 .progress.done .bar i { background: var(--green); }
 
 /* ---------- layout ---------- */
-.cols { display: grid; grid-template-columns: minmax(0, 1fr) 740px; gap: 16px; align-items: start; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 540px; gap: 16px; align-items: start; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
 .card h2 { margin: 0; padding: 0 12px; height: 34px; display: flex; align-items: center; gap: 10px; font-size: 12px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
 .card h2 .right { margin-left: auto; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--dim); }
@@ -529,21 +529,73 @@ select.btn { padding: 0 6px; }
 .swc { padding: 0 5px; letter-spacing: -.1px; }
 .swc b { margin-left: 2px; }
 
-/* ---------- pool: Player column never collapses; table scrolls sideways inside the pool box with Player pinned ---------- */
-table.pool-t { min-width: 740px; }
-.pool-t th:first-child, .pool-t td:first-child { position: sticky; left: 0; background: var(--surface); box-shadow: 1px 0 0 var(--border); }
-.pool-t th:first-child { background: var(--surface-2); z-index: 3; }
+/* ---------- pool: every column fits, no sideways scroll at any width (Adam 2026-10-12) ---------- */
 .pool-t th { z-index: 2; }
-.pool-t td:first-child { z-index: 1; }
-.pool-t tr:hover td:first-child { background: var(--surface-2); }
-.pool-t tr.in td:first-child { background: linear-gradient(rgba(59,116,201,.10), rgba(59,116,201,.10)), var(--surface); opacity: 1; }
-.pool-t tr.in td:first-child .pcell { opacity: .78; }
-.pool-t tr.locked td:first-child, .pool-t tr.locked:hover td:first-child { background: var(--surface); opacity: 1; filter: none; }
-.pool-t tr.locked td:first-child .pcell { opacity: .35; filter: grayscale(1); }
-@media (max-width: 760px) {
-  table.pool-t { min-width: 0; }
-  .pool-t td:first-child { max-width: none; }
+.pool-t th, .pool-t td { padding: 0 4px; }
+.pool-t th:first-child, .pool-t td:first-child { padding-left: 8px; }
+.pool-t td:first-child { overflow: hidden; }
+.pool-t .pcell { max-width: 100%; }
+.pool-t .ptxt { min-width: 0; }
+.pool-t .ptxt .nm { display: block; overflow: visible; }
+.pool-t td.rng { padding: 0 6px; }
+.pool-t td:not(:first-child), .pool-t th:not(:first-child) { font-variant-numeric: tabular-nums; }
+.pool-t .mu { margin-left: 0; }
+.pool-t .pos-c.xs { display: inline-block; min-width: 22px; height: 14px; line-height: 14px; font-size: 9px; margin-left: 5px; padding: 0 3px; }
+.pool .scroll { overflow-x: hidden; }
+.tteam { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; letter-spacing: .3px; color: var(--muted); vertical-align: middle; }
+.tteam .tlogo { margin: 0; vertical-align: 0; }
+.pool-t .mu { display: flex; align-items: center; white-space: nowrap; }
+.slot .who .nm .mu { display: none; }
+
+/* ---------- split-the-difference layout (Adam 2026-10-12, D11 amendment) ---------- */
+/* Lineup column ~620px at 1280, growing toward 740 on wide screens; the pool takes the rest. */
+.cols { grid-template-columns: minmax(0, 1fr) clamp(620px, 48vw, 740px); }
+@media (max-width: 1240px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.rcol { container-type: inline-size; min-width: 0; }
+/* Range bar (72px column) needs pool >= ~620px: pool = viewport - 32 - 16 - lineup; lineup is 691px at 1440, leaving Player ~195px (174px at 1400 cut a long name), so Range shows from 1440 up
+   (and in the single-column layout at <=1240). In between it drops; every number column stays. */
+@media (min-width: 1241px) and (max-width: 1439px) {
+  .pool-t .rng, .pool-t col.rng { display: none; }
 }
+/* gauges: the big number never collapses; unit/verdict clip with an ellipsis instead of running together */
+.gauge .head .l1 .big { flex: none; overflow: visible; max-width: none; }
+.gauge .head .l1 .unit { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.gauge .verdict { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.gauge .r { gap: 8px; }
+.gauge .r .k { flex: none; }
+.gauge .r .v { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* below ~700px of lineup column three gauges do not fit cleanly: 2 + 1 */
+@container (min-width: 520px) and (max-width: 779px) {
+  .gauges { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gauges > .gauge:nth-child(3) { grid-column: 1 / -1; }
+}
+/* swap chips: whole chips only; ones that do not fit the row wrap out of sight (height-clipped) */
+.chips { display: flex; flex: 1 1 0; min-width: 0; max-width: none; height: 20px; flex-wrap: wrap; justify-content: flex-end; overflow: hidden; gap: 0 4px; }
+.swc { flex: none; }
+/* team tag: readable team colour in both themes */
+:root { --buf-t: #e05a6e; --lar-t: #ffb21a; }
+:root[data-theme="light"] { --buf-t: #b30a2a; --lar-t: #a35f00; }
+.tteam.BUF { color: var(--buf-t); } .tteam.LAR { color: var(--lar-t); }
+/* CAPTAIN mode: Own header gold like the $ header */
+.pool.cptmode .pool-t th[data-key="own"] { color: var(--gold); }
+.pool-t td.up + td.up { padding-left: 6px; }
+
+/* D14 (Adam 2026-10-12): unplayable = faded hard (name still readable), sunk by the sort; graded fades keep their place and stay clickable. */
+.pool-t tr.unplayable td { opacity: .3; color: var(--dim); }
+.pool-t tr.unplayable .nm { opacity: 1; color: var(--muted); }
+.pool-t tr.unplayable .av, .pc.unplayable .av { filter: grayscale(1) opacity(.5); }
+.pc.unplayable { opacity: .32; }
+/* D13 lock/over dimming wins over D14 fades; light is clearly visible, strong stronger, unplayable stronger still */
+.pool-t tr.fade-light:not(.locked):not(.over) td { opacity: .55; }
+.pool-t tr.fade-strong:not(.locked):not(.over) td { opacity: .42; }
+.pool-t tr.fade-light:not(.locked):not(.over) .av, .pool-t tr.fade-strong:not(.locked):not(.over) .av, .pc.fade-light:not(.locked):not(.over) .av, .pc.fade-strong:not(.locked):not(.over) .av { filter: grayscale(1) opacity(.7); }
+.pc.fade-light:not(.locked):not(.over) { opacity: .58; }
+.pc.fade-strong:not(.locked):not(.over) { opacity: .45; }
+/* Med column (Adam 2026-10-12, D11 no cut names): needs pool >= ~606px so Player keeps >= ~180px; below 1340px wide it hides and the median stays in each Proj hover. */
+@media (min-width: 761px) and (max-width: 1339px) {
+  .pool-t .med, .pool-t col.med { display: none; }
+}
+.pool-t th:not(:first-child) { padding: 0 3px; }
 
 </style>
 </head>
@@ -1685,6 +1737,171 @@ function fieldEntryStats(sim, fs, payoutSpec, maxBlocks = Infinity) {
 return { MAX_SCORED, scoreLineup, buildFieldScores, massAbove, evaluateRow, fieldAverageRoi, fieldEntryStats, buildPayouts, tiedWinnings };
 })();
 
+const __m_viability_hj2al2 = (function () {
+// Best-lineup rates and viability tiers (D14). Pure ES module: runs unchanged in Node and in a browser.
+//
+// For every simulated game, find the single highest-scoring legal DraftKings Showdown lineup
+// (1 Captain at 1.5x salary and 1.5x points + 5 FLEX, salary cap, at least one player from each
+// team, no player twice) and count how often each player is in it as Captain and as FLEX.
+//
+//   bestLineupRates(sim, players, { cap }) -> [{ cpt, flex, total }] in percent, players' order
+//   viabilityTier(p)                       -> 'unplayable' | 'ok' (from projection and salary, not the rate)
+//
+// Search: branch and bound per sim. Captains are tried in descending score order; for each, the
+// FLEX five are chosen depth-first from the other players sorted by descending score. Every bound
+// drops the salary and team rules, so it can only over-estimate the best lineup reachable from that
+// node and never prunes the true optimum (a relaxation is admissible). Prunes are strict ("bound
+// below the best by more than rounding"), so lineups tied with the best are still reached and the
+// tie-break below decides deterministically.
+
+// D14 (Adam 2026-10-12): viability is decided by projection and salary, not the best-lineup rate
+// (that rate stays as shown information). Kickers and defenses are always viable; a zero or missing
+// projection is unplayable; under $1,000 salary any non-zero projection is viable; otherwise a
+// projection under 3 points is unplayable.
+const ALWAYS_VIABLE_POS = new Set(['K', 'DST', 'D/ST', 'DEF']);   // compared upper-cased
+// Which snapshot field is "projection": TwoGunGPT's average, not the median — Adam, 2026-10-12:
+// "err on the side of not ruling guys out".
+const VIABILITY_PROJECTION_FIELD = 'projection';
+const CHEAP_SALARY_BELOW = 1000;
+const UNPLAYABLE_PROJECTION_BELOW = 3;
+
+const DEFAULT_CAP = 50000;
+const CPT_MULT = 1.5;
+// Slack for floating-point rounding between a bound summed in one order and a lineup total summed
+// in another; far below any real score difference (scores are DK points, at 0.01 resolution or coarser).
+const BOUND_EPS = 1e-6;
+
+// The lineup's points, always summed in one fixed order (captain, then FLEX by ascending index), so
+// the same lineup gets the identical float total however it was reached. flexSorted: ascending indices.
+function lineupPoints(sc, c, flexSorted) {
+  let t = CPT_MULT * sc[c];
+  for (let k = 0; k < flexSorted.length; k++) t += sc[flexSorted[k]];
+  return t;
+}
+
+// Tie-break between equal-point lineups: lower captain index, then lexicographically lower sorted FLEX.
+// Returns true when (c, f) should replace (bc, bf).
+function beatsOnTie(c, f, bc, bf) {
+  if (c !== bc) return c < bc;
+  for (let k = 0; k < f.length; k++) if (f[k] !== bf[k]) return f[k] < bf[k];
+  return false;
+}
+
+// Per-sim solver state, allocated once and reused across sims.
+function makeSolver(players, cap) {
+  const n = players.length;
+  const sal = Float64Array.from(players, (p) => Number(p.salary));
+  const csal = Float64Array.from(players, (p) => Number(p.cptSalary));
+  const teamOf = new Int32Array(n);
+  const teamIds = new Map();
+  players.forEach((p, i) => { if (!teamIds.has(p.team)) teamIds.set(p.team, teamIds.size); teamOf[i] = teamIds.get(p.team); });
+  // Missing salary is missing, never zero: a player without a usable salary cannot be placed.
+  const okFlex = players.map((p, i) => Number.isFinite(sal[i]) && sal[i] > 0);
+  const okCpt = players.map((p, i) => okFlex[i] && Number.isFinite(csal[i]) && csal[i] > 0);
+  const cheapest5Excl = (c) => {
+    const s = []; for (let i = 0; i < n; i++) if (i !== c && okFlex[i]) s.push(sal[i]);
+    s.sort((a, b) => a - b);
+    return s.length < 5 ? Infinity : s[0] + s[1] + s[2] + s[3] + s[4];
+  };
+  const minFlexCost = Float64Array.from(players, (_, c) => cheapest5Excl(c));
+  return {
+    n, cap, sal, csal, teamOf, okFlex, okCpt, minFlexCost,
+    sc: new Float64Array(n), order: new Int32Array(n), rest: new Int32Array(n),
+    pick: new Int32Array(5), sorted: new Int32Array(5), bestFlex: new Int32Array(5),
+    best: -Infinity, bestCpt: -1, cpt: -1, restLen: 0,
+  };
+}
+
+// Leaf: a full set of five FLEX for the current captain. Checks the team rule and the tie-break.
+function considerLeaf(S) {
+  const t0 = S.teamOf[S.cpt];
+  let twoTeams = false;
+  for (let k = 0; k < 5; k++) if (S.teamOf[S.pick[k]] !== t0) { twoTeams = true; break; }
+  if (!twoTeams) return;
+  S.sorted.set(S.pick); S.sorted.sort();
+  const pts = lineupPoints(S.sc, S.cpt, S.sorted);
+  if (pts > S.best || (pts === S.best && beatsOnTie(S.cpt, S.sorted, S.bestCpt, S.bestFlex))) {
+    S.best = pts; S.bestCpt = S.cpt; S.bestFlex.set(S.sorted);
+  }
+}
+
+// Depth-first choice of FLEX slot `depth` from rest[start..]. rest is in descending score order, so
+// pts + the next `need` scores from position t is the most any completion starting at t can add; if
+// that falls short, every later t falls short too (each later window sums no higher).
+function searchFlex(S, start, depth, salary, pts) {
+  const need = 5 - depth;
+  if (need === 0) { considerLeaf(S); return; }
+  const { rest, sc, sal, restLen, cap } = S;
+  for (let t = start; t <= restLen - need; t++) {
+    let ub = pts;
+    for (let u = t; u < t + need; u++) ub += sc[rest[u]];
+    if (ub < S.best - BOUND_EPS) return;
+    const x = rest[t];
+    const ns = salary + sal[x];
+    if (ns > cap) continue;
+    S.pick[depth] = x;
+    searchFlex(S, t + 1, depth + 1, ns, pts + sc[x]);
+  }
+}
+
+// Solve one sim: leaves the best lineup in S.bestCpt / S.bestFlex (bestCpt -1 when none is legal).
+function solveSim(S) {
+  const { n, sc, order, rest } = S;
+  for (let i = 0; i < n; i++) order[i] = i;
+  order.sort((a, b) => sc[b] - sc[a] || a - b);
+  S.best = -Infinity; S.bestCpt = -1;
+  for (let oc = 0; oc < n; oc++) {
+    const c = order[oc];
+    if (!S.okCpt[c] || S.csal[c] + S.minFlexCost[c] > S.cap) continue;
+    // Captain bound: 1.5x his score plus the five highest other scores, ignoring salary and teams.
+    let len = 0, top5 = 0;
+    for (let k = 0; k < n; k++) { const x = order[k]; if (x !== c && S.okFlex[x]) { if (len < 5) top5 += sc[x]; rest[len++] = x; } }
+    if (len < 5 || CPT_MULT * sc[c] + top5 < S.best - BOUND_EPS) continue;
+    S.cpt = c; S.restLen = len;
+    searchFlex(S, 0, 0, S.csal[c], CPT_MULT * sc[c]);
+  }
+}
+
+// sim: { sims, n, scores } with scores[s * n + i] = player i's DK points in sim s (players' order).
+// Returns one { cpt, flex, total } per player, in percent of all sims; `noLineupSims` counts sims
+// with no legal lineup at all (then the column sums fall short of 100% / 500%).
+function bestLineupRates(sim, players, { cap = DEFAULT_CAP } = {}) {
+  const n = players.length;
+  if (sim.n !== n) throw new Error(`bestLineupRates: sim has ${sim.n} players, pool has ${n}`);
+  const S = makeSolver(players, cap);
+  const cptHits = new Float64Array(n), flexHits = new Float64Array(n);
+  let noLineupSims = 0;
+  for (let s = 0; s < sim.sims; s++) {
+    const base = s * n;
+    for (let i = 0; i < n; i++) S.sc[i] = sim.scores[base + i];
+    solveSim(S);
+    if (S.bestCpt < 0) { noLineupSims++; continue; }
+    cptHits[S.bestCpt]++;
+    for (let k = 0; k < 5; k++) flexHits[S.bestFlex[k]]++;
+  }
+  const pct = 100 / sim.sims;
+  const rates = players.map((_, i) => {
+    const cpt = cptHits[i] * pct, flex = flexHits[i] * pct;
+    return { cpt, flex, total: cpt + flex };
+  });
+  rates.noLineupSims = noLineupSims;
+  return rates;
+}
+
+// D14 tier for one player (see the constants above). Pure.
+function viabilityTier(p) {
+  if (p && ALWAYS_VIABLE_POS.has(String(p.pos).toUpperCase())) return 'ok';
+  const proj = Number(p && p[VIABILITY_PROJECTION_FIELD]);
+  if (!Number.isFinite(proj) || proj <= 0) return 'unplayable';   // zero or missing (null -> 0, undefined -> NaN)
+  const sal = Number(p.salary);   // a missing salary never counts as cheap
+  if (p.salary != null && Number.isFinite(sal) && sal < CHEAP_SALARY_BELOW) return 'ok';
+  if (proj < UNPLAYABLE_PROJECTION_BELOW) return 'unplayable';
+  return 'ok';
+}
+
+return { ALWAYS_VIABLE_POS, VIABILITY_PROJECTION_FIELD, CHEAP_SALARY_BELOW, UNPLAYABLE_PROJECTION_BELOW, DEFAULT_CAP, lineupPoints, beatsOnTie, bestLineupRates, viabilityTier };
+})();
+
 const __m_index_sv36pd = (function () {
 // LineupLab-TGFF engine entry point. Pure ES module: runs unchanged in Node and in a browser.
 //
@@ -1697,6 +1914,7 @@ const { enumerateLineups, fitField, findLineup, bucketOf, nearTwins, SALARY_CAP,
 const { buildFieldScores, evaluateRow, scoreLineup, fieldAverageRoi, fieldEntryStats, MAX_SCORED } = __m_ev_r08bk4;
 const { buildPayouts, makeContest } = __m_payout_t9hy8p;
 const { percentileSorted } = __m_stats_8x05um;
+const { bestLineupRates, viabilityTier } = __m_viability_hj2al2;
 
 const yieldNow = () => new Promise((r) => setTimeout(r, 0));
 
@@ -1736,6 +1954,16 @@ async function createEngine(snapshot, { sims = 10000, seed = 1, fieldSize, entry
   await yieldNow();
   const sim = simulateGames(snapshot, players, { sims, seed });
   progress('sim', 1, 'games simulated');
+  await yieldNow();
+
+  // D14: each player's share of sims in which he is in that sim's best legal lineup (shown), and his tier.
+  progress('viability', 0, 'finding each sim\'s best lineup');
+  await yieldNow();
+  const tBest = Date.now();
+  const bestRates = bestLineupRates(sim, players, { cap: SALARY_CAP });
+  players.forEach((p, i) => { const r = bestRates[i]; p.bestRate = { cpt: r.cpt, flex: r.flex, total: r.total }; p.viability = viabilityTier(p); });
+  const bestRateMs = Date.now() - tBest;
+  progress('viability', 1, `best lineups found in ${(bestRateMs / 1000).toFixed(1)} s`);
   await yieldNow();
 
   progress('enumerate', 0, 'enumerating legal lineups');
@@ -2034,7 +2262,7 @@ async function createEngine(snapshot, { sims = 10000, seed = 1, fieldSize, entry
   }
 
   const engine = {
-    players, fitReport, legalCount: en.count, meta, sims, buildMs, fieldSharpness,
+    players, fitReport, legalCount: en.count, meta, sims, buildMs, bestRateMs, bestRateNoLineupSims: bestRates.noLineupSims, fieldSharpness,
     get fieldSize() { return C.N; },
     get fieldBenchmarks() { return C.benchmarks; },
     get contest() { return { ...C.contest, paid: C.payout.paid, alpha: C.payout.alpha, prizes: Array.from(C.payout.prizes), scoredPerSim: C.fs.scored, subsampled: C.fs.subsampled, fieldAvgRoi: C.fieldAvgRoi }; },
@@ -2120,12 +2348,13 @@ function oneIn(p) { if (!p || p <= 0) return 'never'; const n = 1 / p; return '1
 function signed(x, d = 1, suffix = '') { if (x == null || isNaN(x)) return '–'; const s = x > 0 ? '+' : x < 0 ? '−' : ''; return s + Math.abs(x).toFixed(d) + suffix }
 function signedMoney(x) { if (!x) return '$0'; return (x > 0 ? '+' : '−') + '$' + Math.abs(x).toLocaleString('en-US') }
 function matchup(p) { return p.team === 'LAR' ? 'vs BUF' : '@ LAR' }
-function matchupFor(p, meta) { return p.team === meta.home ? 'vs ' + meta.away : '@ ' + meta.home }
 function fmtOwn(v) { v = Math.round(Number(v) * 10) / 10; return Number.isInteger(v) ? String(v) : v.toFixed(1) }
 function lastName(name) { const w = name.split(/\s+/).filter(x => !/^(jr|sr|ii|iii|iv|v)\.?$/i.test(x)); return w[w.length - 1] || name }
 // Swap deltas are ROI differences in percentage points, never a return: "+23 pts" with "ROI goes from +72% to +95%" on hover.
 function roiPts(d) { return signed(d * 100, 0, ' pts') }
 function roiFromTo(base, o) { const to = o.roi != null ? o.roi : (base != null ? base + o.deltaEv : null); return base != null && to != null ? `ROI goes from ${signed(base * 100, 0, '%')} to ${signed(to * 100, 0, '%')}` : `ROI ${roiPts(o.deltaEv)}` }
+// Per-player Proj hover (D14, Adam 2026-10-12): the average, with his median named so the two are never confused.
+function projTip(p, m = 1) { return `Projection: TwoGunGPT's average score; his median is ${(p.median * m).toFixed(1)} (the middle of his range)${m > 1 ? ' (Captain 1.5x)' : ''}` }
 function cls(x) { return x > 0.0005 ? 'good' : x < -0.0005 ? 'bad' : 'zero' }
 
 // Ownership cell: published numbers plain, the page's own estimate in italics with its method on hover.
@@ -2142,7 +2371,8 @@ function ownCell(p, kind) {
 const TIP = {
   flexSal: 'DraftKings FLEX salary. Counts 1x against the $50,000 cap.',
   cptSal: 'Captain salary: 1.5x the FLEX salary; the Captain also scores 1.5x points.',
-  med: 'MEDIAN: his 50th-percentile game in TwoGunGPT\'s 10,000 box-score simulations (half his games are better, half worse).',
+  proj: "Projection: TwoGunGPT's average score (the number the viability and fade rules use)",
+  med: 'Median: his middle game — half his sims score more, half less',
   ceil: 'CEILING: a top-20% game (about 1 in 5) in TwoGunGPT\'s simulations.',
   nuke: 'NUKE: a top-5% game (about 1 in 20) in TwoGunGPT\'s simulations.',
   ownF: 'Expected share of the field rostering him at FLEX. Plain = published by TwoGunGPT; italic = this page\'s estimate (hover the number for the method).',
@@ -2276,10 +2506,13 @@ function teamLogo(team, size) {
   return logo ? `<img class="tlogo" src="${logo}" alt="" style="width:${size}px;height:${size}px" draggable="false">` : ''
 }
 
+// Small team tag (logo + abbreviation in the team colour) used instead of the vs/@ matchup text (one game only).
+function teamTag(p) { return `<span class="tteam ${p.team}">${teamLogo(p.team, 12)}${p.team}</span>` }
+
 // Hover text for a player: injury, jersey, short bio.
 function playerTitle(p) {
   const ref = playerRef(p)
-  const parts = [`${p.name} (${p.team} ${p.pos}, ${matchupFor(p, S.meta)})`]
+  const parts = [`${p.name} (${p.team} ${p.pos})`]
   if (ref) {
     const bio = []
     if (ref.jersey) bio.push('#' + ref.jersey)
@@ -2306,19 +2539,20 @@ function playerTitle(p) {
 // Upside columns are graded by percentile across the whole pool (five tints); median and projection stay plain.
 const POOL_COLS = [
   { key: 'name', label: 'Player', title: 'Player and matchup. A gold dot marks an injury note (hover the row).' },
-  { key: 'pos', label: 'Pos', cls: 'pos hide-xs', title: 'Position' },
   { key: 'salary', label: '$', title: 'Salary at the current mode (Captain = 1.5x the FLEX salary).' },
   { key: 'range', label: 'Range', cls: 'hide-sm rng', title: 'Range bar: floor (10th percentile) → median tick → ceiling → nuke. The median-to-nuke stretch is the upside tail. Sorts by ceiling.' },
-  { key: 'median', label: 'Med', cls: 'hide-xs', title: TIP.med },
+  { key: 'projection', label: 'Proj', cls: 'hide-xs', title: TIP.proj },
+  { key: 'median', label: 'Med', cls: 'hide-xs med', title: TIP.med },
   { key: 'ceiling', label: 'Ceil', cls: 'up', grade: true, title: TIP.ceil },
   { key: 'nuke', label: 'Nuke', cls: 'up hide-xs', grade: true, title: TIP.nuke },
-  { key: 'upside', label: 'Upside', cls: 'up hide-xs', grade: true, title: 'Upside = (nuke − median) ÷ median: how much bigger his big game is than his typical game. Graded by percentile across this pool.' },
+  { key: 'upside', label: 'Up×', cls: 'up hide-xs', grade: true, title: 'Upside = (nuke − median) ÷ median: how much bigger his big game is than his typical game. Graded by percentile across this pool.' },
   { key: 'p4x', label: '4x%', cls: 'up hide-xs', grade: true, title: 'His odds of scoring 4x his salary (TwoGunGPT). Graded by percentile across this pool.' },
   { key: 'ceilPerK', label: 'C/$K', cls: 'up hide-xs', grade: true, title: 'Ceiling per $1,000 of salary at the current mode. Graded by percentile across this pool.' },
   { key: 'shootout', label: 'Shoot', cls: 'up hide-xs', grade: true, title: 'Shootout: his average score in the "close, over the total" scripts against his overall median, as +N%. Positive = he scores more when the game turns into a shootout. From the engine\'s simulations; graded by percentile across this pool (D12).' },
   { key: 'own', label: 'Own', title: 'Expected share of the field rostering him at this mode (FLEX or Captain). Plain = published by TwoGunGPT; italic = this page\'s estimate (hover the number for the method).' }
 ]
-const POOL_WIDTHS = [null, 38, 58, 50, 40, 46, 48, 54, 42, 50, 54, 48]
+// Fixed widths (px) per column; Player (null) takes the rest and stays >=150px: 402px of numbers + 72px Range (Range hides at laptop width, see style.css).
+const POOL_WIDTHS = [null, 54, 64, 44, 42, 40, 40, 40, 36, 40, 48, 42]
 const POOL_MAX_PTS = 45
 const GRADE_MIN_PROJ = 3.0
 
@@ -2327,10 +2561,11 @@ function poolVal(p, key) {
   const m = poolMult()
   switch (key) {
     case 'salary': return S.mode === 'cpt' ? p.cptSalary : p.salary
+    case 'projection': return p.projection * m
     case 'median': return p.median * m
     case 'ceiling': case 'range': return p.ceiling * m
     case 'nuke': return p.nuke * m
-    case 'upside': return p.median > 0 ? (p.nuke - p.median) / p.median : 0
+    case 'upside': return p.projection < GRADE_MIN_PROJ ? -Infinity : p.median > 0 ? (p.nuke - p.median) / p.median : 0
     case 'p4x': return p.p4x || 0
     case 'ceilPerK': return p.ceiling / (p.salary / 1000)
     case 'shootout': return p.shootoutLift != null ? p.shootoutLift : -Infinity
@@ -2406,6 +2641,37 @@ function poolLock(p, v) {
 }
 function poolLockById(id) { const p = S.byId.get(id); return p ? poolLock(p, localValidate(S.lineup)) : null }
 
+// ---- D14 (Adam 2026-10-12): unplayable sinks and fades hard; low-$ low-projection low-value players fade lightly/strongly ----
+// Pool average points per $1K = MEAN of each player's projection*1000/salary, over players who are not K, not DST and have projection > 0.
+function poolAvgPerK() {
+  const xs = S.players.filter(p => p.pos !== 'K' && p.pos !== 'DST' && p.projection > 0 && p.salary > 0).map(p => p.projection * 1000 / p.salary)
+  return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null
+}
+// Pure: null | 'light' | 'strong'. Only $1,000-$3,999 salary, projection 3-6, best-lineup rate under 10%, and projection per $1K below the
+// pool average by 15-30% (light) or over 30% (strong). K/DST never. Needs the engine's bestRate; with none, nothing is faded.
+function fadeLevel(p, poolAvgPerK) {
+  if (!p.bestRate || !poolAvgPerK || p.pos === 'K' || p.pos === 'DST') return null
+  if (p.salary < 1000 || p.salary > 3999 || p.projection < 3 || p.projection > 6 || p.bestRate.total >= 10) return null
+  const below = 1 - (p.projection * 1000 / p.salary) / poolAvgPerK
+  return below > 0.30 ? 'strong' : below >= 0.15 ? 'light' : null
+}
+// D14: K and DST are always viable. The engine's viability wins when present; the projection-0 fallback applies only before the engine has run.
+function isKorDST(p) { return ["K", "DST", "D/ST", "DEF"].includes(String(p.pos).toUpperCase()) }
+function isUnplayable(p) { return p.viability === 'unplayable' || (p.viability == null && !(p.projection > 0) && !isKorDST(p)) }
+function sinks(p) { return isUnplayable(p) ? 1 : 0 }
+// Row/card class and hover text for the D14 states, plus the best-lineup rate (shown for everyone once the engine has it).
+function poolFlag(p, avg) {
+  const br = p.bestRate
+  const rate = br ? `In the best lineup ${fmtOwn(br.total)}% of sims (CPT ${fmtOwn(br.cpt)}% · FLEX ${fmtOwn(br.flex)}%)` : ''
+  let cls = '', why = ''
+  if (isUnplayable(p)) { cls = 'unplayable'; why = !(p.projection > 0) ? 'Not viable: projection 0 or missing' : 'Not viable: projection under 3 at $1,000+' }
+  else {
+    const lvl = fadeLevel(p, avg)
+    if (lvl) { cls = 'fade-' + lvl; why = `Low value for a low-$ play: ${Math.round((1 - (p.projection * 1000 / p.salary) / avg) * 100)}% below the pool's points per $1K, best lineup ${fmtOwn(br.total)}%` }
+  }
+  return { cls, tip: [rate, why].filter(Boolean).map(t => '\n' + t).join('') }
+}
+
 function poolFlags(p, v) {
   const slot = lineupSlotOf(p.id)
   const fit = poolFits(p, v)
@@ -2421,37 +2687,38 @@ function hintText(slot, lock) {
 }
 function ownCellMode(p) { return ownCell(p, S.mode === 'cpt' ? 'cpt' : 'flex') }
 
-function poolRowHtml(p, v, g) {
+function poolRowHtml(p, v, g, avg) {
   const { slot, isCpt, inFlex, fit, over: over0, lock } = poolFlags(p, v)
+  const fl = poolFlag(p, avg)
   const over = over0 && !lock
-  const cl = [slot != null ? 'in' : '', p.projection <= 0 ? 'zero' : '', over ? 'over' : '', lock ? 'locked' : ''].join(' ').trim()
+  const cl = [slot != null ? 'in' : '', p.projection <= 0 ? 'zero' : '', fl.cls, over ? 'over' : '', lock ? 'locked' : ''].join(' ').trim()
   const badge = isCpt ? '<span class="badge cpt">CPT</span>' : inFlex ? '<span class="badge">FLEX</span>' : ''
   const overTip = lock ? `\n${lock.tip}` : over ? `\nDoes not fit: ${money(-fit)} over what is left (still clickable; the card shows the error)` : ''
-  const num = (key, d) => `<td class="${POOL_COLS.find(c => c.key === key).cls || ''} ${gradeClass(g, key, p)}" title="${esc(POOL_COLS.find(c => c.key === key).title)}">${poolVal(p, key).toFixed(d)}</td>`
-  return `<tr class="${cl}" data-id="${p.id}" draggable="${lock ? 'false' : 'true'}" title="${esc(playerTitle(p))}${overTip}">
-<td><span class="pcell">${avatarFor(p, 28)}<span class="ptxt"><span class="nm">${esc(p.name)}${p.injury ? '<i class="inj"></i>' : ''}</span><span class="mu">${matchupFor(p, S.meta)}<span class="pos-c xs ${p.pos}">${p.pos}</span>${badge}</span></span></span></td>
-<td class="pos hide-xs"><span class="pos-c ${p.pos}">${p.pos}</span></td>
+  const num = (key, d, tip) => `<td class="${POOL_COLS.find(c => c.key === key).cls || ''} ${gradeClass(g, key, p)}" title="${esc(tip || POOL_COLS.find(c => c.key === key).title)}">${poolVal(p, key).toFixed(d)}</td>`
+  return `<tr class="${cl}" data-id="${p.id}" draggable="${lock ? 'false' : 'true'}" title="${esc(playerTitle(p))}${esc(fl.tip)}${overTip}">
+<td><span class="pcell">${avatarFor(p, 28)}<span class="ptxt"><span class="nm">${esc(p.name)}${p.injury ? '<i class="inj"></i>' : ''}</span><span class="mu">${teamTag(p)}<span class="pos-c xs ${p.pos}">${p.pos}</span>${badge}</span></span></span></td>
 <td class="${S.mode === 'cpt' ? 'gold' : ''}" title="${S.mode === 'cpt' ? TIP.cptSal : TIP.flexSal}">${money(poolVal(p, 'salary'))}</td>
 <td class="hide-sm rng">${rangeBar(p)}</td>
-${num('median', 1).replace('<td class="', '<td class="hide-xs ')}${num('ceiling', 1)}${num('nuke', 1)}
-<td class="up hide-xs ${gradeClass(g, 'upside', p)}" title="${esc(POOL_COLS[7].title)}">${p.median > 0 ? poolVal(p, 'upside').toFixed(1) + '×' : '–'}</td>
-<td class="up hide-xs ${gradeClass(g, 'p4x', p)}" title="${esc(POOL_COLS[8].title)}">${p.p4x != null ? poolVal(p, 'p4x').toFixed(0) + '%' : '–'}</td>
-<td class="up hide-xs ${gradeClass(g, 'ceilPerK', p)}" title="${esc(POOL_COLS[9].title)}">${poolVal(p, 'ceilPerK').toFixed(2)}</td>
-<td class="up hide-xs ${p.shootoutLift != null ? gradeClass(g, 'shootout', p) : ''}" title="${esc(POOL_COLS[10].title)}">${p.shootoutLift != null ? signed(p.shootoutLift * 100, 0, '%') : '<span class="dim">–</span>'}</td>
+${num('projection', 1, projTip(p, poolMult())).replace('<td class="', '<td class="hide-xs ')}${num('median', 1).replace('<td class="', '<td class="hide-xs ')}${num('ceiling', 1)}${num('nuke', 1)}
+<td class="up hide-xs ${gradeClass(g, 'upside', p)}" title="${esc(POOL_COLS.find(c => c.key === 'upside').title)}">${p.median > 0 && p.projection >= GRADE_MIN_PROJ ? poolVal(p, 'upside').toFixed(1) + '×' : '–'}</td>
+<td class="up hide-xs ${gradeClass(g, 'p4x', p)}" title="${esc(POOL_COLS.find(c => c.key === 'p4x').title)}">${p.p4x != null ? poolVal(p, 'p4x').toFixed(0) + '%' : '–'}</td>
+<td class="up hide-xs ${gradeClass(g, 'ceilPerK', p)}" title="${esc(POOL_COLS.find(c => c.key === 'ceilPerK').title)}">${poolVal(p, 'ceilPerK').toFixed(2)}</td>
+<td class="up hide-xs ${p.shootoutLift != null ? gradeClass(g, 'shootout', p) : ''}" title="${esc(POOL_COLS.find(c => c.key === 'shootout').title)}">${p.shootoutLift != null && p.projection >= GRADE_MIN_PROJ ? signed(p.shootoutLift * 100, 0, '%') : '<span class="dim">–</span>'}</td>
 <td class="rel">${ownCellMode(p)}<span class="hint">${hintText(slot, lock)}</span></td>
 </tr>`
 }
 
-function poolCardHtml(p, v, g) {
+function poolCardHtml(p, v, g, avg) {
   const { slot, isCpt, inFlex, fit, over: over0, lock } = poolFlags(p, v)
+  const fl = poolFlag(p, avg)
   const over = over0 && !lock
-  const cl = ['pc', p.team, slot != null ? 'in' : '', p.projection <= 0 ? 'zero' : '', over ? 'over' : '', lock ? 'locked' : ''].join(' ').trim()
-  return `<div class="${cl}" data-id="${p.id}" draggable="${lock ? 'false' : 'true'}" title="${esc(playerTitle(p))}${lock ? `\n${lock.tip}` : over ? `\nDoes not fit: ${money(-fit)} over what is left` : ''}">
+  const cl = ['pc', p.team, slot != null ? 'in' : '', p.projection <= 0 ? 'zero' : '', fl.cls, over ? 'over' : '', lock ? 'locked' : ''].join(' ').trim()
+  return `<div class="${cl}" data-id="${p.id}" draggable="${lock ? 'false' : 'true'}" title="${esc(playerTitle(p))}${esc(fl.tip)}${lock ? `\n${lock.tip}` : over ? `\nDoes not fit: ${money(-fit)} over what is left` : ''}">
 ${isCpt ? '<span class="badge cpt">CPT</span>' : inFlex ? '<span class="badge">FLEX</span>' : ''}
-<div class="top">${avatarFor(p, 48)}<div class="t"><div class="nm">${esc(p.name)}${p.injury ? '<i class="inj"></i>' : ''}</div><div class="mu">${matchupFor(p, S.meta)} <span class="pos-c ${p.pos}">${p.pos}</span></div></div></div>
+<div class="top">${avatarFor(p, 48)}<div class="t"><div class="nm">${esc(p.name)}${p.injury ? '<i class="inj"></i>' : ''}</div><div class="mu">${teamTag(p)} <span class="pos-c ${p.pos}">${p.pos}</span></div></div></div>
 <div class="prices"><span class="${S.mode === 'cpt' ? 'gold' : ''}">${money(poolVal(p, 'salary'))}</span><span>${ownCellMode(p)}</span></div>
 ${rangeBar(p)}
-<div class="nums"><span title="${TIP.med}">${poolVal(p, 'median').toFixed(1)}</span><span class="up ${gradeClass(g, 'ceiling', p)}" title="${TIP.ceil}">${poolVal(p, 'ceiling').toFixed(1)}</span><span class="up ${gradeClass(g, 'nuke', p)}" title="${TIP.nuke}">${poolVal(p, 'nuke').toFixed(1)}</span><span class="up ${gradeClass(g, 'upside', p)}" title="Upside">${p.median > 0 ? poolVal(p, 'upside').toFixed(1) + '×' : '–'}</span></div>
+<div class="nums"><span title="${esc(projTip(p, poolMult()))}">${poolVal(p, 'projection').toFixed(1)}</span><span class="up ${gradeClass(g, 'ceiling', p)}" title="${TIP.ceil}">${poolVal(p, 'ceiling').toFixed(1)}</span><span class="up ${gradeClass(g, 'nuke', p)}" title="${TIP.nuke}">${poolVal(p, 'nuke').toFixed(1)}</span><span class="up ${gradeClass(g, 'upside', p)}" title="Upside">${p.median > 0 && p.projection >= GRADE_MIN_PROJ ? poolVal(p, 'upside').toFixed(1) + '×' : '–'}</span></div>
 <div class="hint">${hintText(slot, lock)}</div>
 </div>`
 }
@@ -2460,14 +2727,15 @@ function renderPool() {
   const f = S.filters
   const v = localValidate(S.lineup)
   const g = poolGrades()
+  const avg = poolAvgPerK()
   const q = f.q.trim().toLowerCase()
   const rows = S.players.filter(p => (!f.team || p.team === f.team) && (!f.pos || p.pos === f.pos) && (!q || p.name.toLowerCase().includes(q))
     && p.salary >= f.minSal && p.salary <= f.maxSal && (!f.fits || lineupHas(p.id) || (poolLastSpotOver(p, v) != null ? poolLastSpotOver(p, v) <= 0 : poolFits(p, v) >= 0)))
   const { key, dir } = S.sort
   const cmp = (a, b) => { const x = poolVal(a, key), y = poolVal(b, key); return (x < y ? -1 : x > y ? 1 : 0) * dir }
-  rows.sort((a, b) => (b.projection > 0) - (a.projection > 0) || cmp(a, b) || b.salary - a.salary)   // projection-0 players always last
-  if (S.view === 'cards') document.getElementById('pool-cards').innerHTML = rows.map(p => poolCardHtml(p, v, g)).join('')
-  else document.getElementById('pool-body').innerHTML = rows.map(p => poolRowHtml(p, v, g)).join('')
+  rows.sort((a, b) => sinks(a) - sinks(b) || cmp(a, b) || b.salary - a.salary)   // projection-0 and unplayable players always last, in every sort (D14, Adam 2026-10-12)
+  if (S.view === 'cards') document.getElementById('pool-cards').innerHTML = rows.map(p => poolCardHtml(p, v, g, avg)).join('')
+  else document.getElementById('pool-body').innerHTML = rows.map(p => poolRowHtml(p, v, g, avg)).join('')
   document.getElementById('pool-wrap').classList.toggle('cards', S.view === 'cards')
   document.querySelectorAll('#pool-head th').forEach(th => {
     const on = th.dataset.key === key
@@ -2486,14 +2754,14 @@ function renderPool() {
   document.getElementById('mode-flex').classList.toggle('on', S.mode !== 'cpt')
   document.getElementById('mode-cpt').classList.toggle('on', S.mode === 'cpt')
   document.querySelector('.pool').classList.toggle('cptmode', S.mode === 'cpt')
-  const ownTh = document.querySelector('#pool-head th[data-key="own"]'); if (ownTh) ownTh.firstChild.textContent = S.mode === 'cpt' ? 'Own CPT' : 'Own'
+  const ownTh = document.querySelector('#pool-head th[data-key="own"]'); if (ownTh) ownTh.firstChild.textContent = 'Own'
 }
 
 function setMode(mode) { S.mode = mode; renderPool() }
 
 function poolHtml() {
   const head = POOL_COLS.map(c => `<th class="${c.cls || ''}" data-key="${c.key}" title="${esc(c.title)}">${c.label}<span class="arr"></span></th>`).join('')
-  const cols = POOL_WIDTHS.map(w => `<col${w ? ` style="width:${w}px"` : ''}>`).join('')
+  const cols = POOL_WIDTHS.map((w, i) => `<col${i === 2 ? ' class="rng"' : i === 4 ? ' class="med"' : ''}${w ? ` style="width:${w}px"` : ''}>`).join('')
   const teams = [['', 'All'], [S.meta.away, S.meta.away], [S.meta.home, S.meta.home]].map(([v, l]) => `<button class="fchip ${v}" data-team="${v}">${v ? teamLogo(v, 14) : ''}${l}</button>`).join('')
   const poss = ['QB', 'RB', 'WR', 'TE', 'K', 'DST'].map(p => `<button class="fchip p-${p}" data-pos="${p}">${p}</button>`).join('')
   const maxSal = Math.max(...S.players.map(p => p.salary))
@@ -2667,7 +2935,7 @@ function swapChips(slot) {
   return `<span class="chips">` + s.options.filter(o => o.legal !== false).slice(0, 3).map(o => {
     const p = S.byId.get(o.id); if (!p) return ''
     const base = a.ev ? a.ev.roi : null
-    return `<button class="swc ${cls(o.deltaEv)}" data-swap="${slot}" data-id="${o.id}" title="Swap in ${esc(p.name)} (${matchupFor(p, S.meta)}): ${roiFromTo(base, o)}; copies ${signed(o.deltaCopies, 2)}; salary ${signedMoney(o.deltaSalary)}${o.approx ? '; approximate in this contest size' : ''}. Click to apply.">${esc(lastName(p.name))} <b>${roiPts(o.deltaEv)}</b></button>`
+    return `<button class="swc ${cls(o.deltaEv)}" data-swap="${slot}" data-id="${o.id}" title="Swap in ${esc(p.name)}: ${roiFromTo(base, o)}; copies ${signed(o.deltaCopies, 2)}; salary ${signedMoney(o.deltaSalary)}${o.approx ? '; approximate in this contest size' : ''}. Click to apply.">${esc(lastName(p.name))} <b>${roiPts(o.deltaEv)}</b></button>`
   }).join('') + `</span>`
 }
 
@@ -2681,7 +2949,7 @@ function slotHtml(slot, id) {
   return `<div class="slot ${isC ? 'cpt' : ''} filled ${p.team}${sel}" data-slot="${slot}" draggable="true" title="${esc(playerTitle(p))}\nClick to select this slot (the next pool click replaces him); drag to reorder; Delete removes him">
 <span class="lab">${lab}${isC ? '<em>1.5×</em>' : ''}</span>
 ${avatarFor(p, isC ? 52 : 44)}
-<span class="who"><span class="nm">${esc(p.name)}${p.injury ? '<i class="inj"></i>' : ''}<span class="mu">${matchupFor(p, S.meta)}</span></span><span class="sub"><span class="pos-c ${p.pos}">${p.pos}</span>${ownTag(p, isC)}<span class="pts" title="${isC ? 'Median x1.5 / ceiling x1.5 as Captain' : 'Median / ceiling'}">${(p.median * (isC ? 1.5 : 1)).toFixed(1)} <span class="dim">/</span> ${(p.ceiling * (isC ? 1.5 : 1)).toFixed(1)}</span>${swapChips(slot)}<span class="sal m" title="${isC ? TIP.cptSal : TIP.flexSal}">${money(isC ? p.cptSalary : p.salary)}</span></span></span>
+<span class="who"><span class="nm">${esc(p.name)}${p.injury ? '<i class="inj"></i>' : ''}</span><span class="sub">${teamTag(p)}<span class="pos-c ${p.pos}">${p.pos}</span>${ownTag(p, isC)}<span class="pts" title="${isC ? 'Projection (average) x1.5 / ceiling x1.5 as Captain' : 'Projection (average) / ceiling'}">${(p.projection * (isC ? 1.5 : 1)).toFixed(1)} <span class="dim">/</span> ${(p.ceiling * (isC ? 1.5 : 1)).toFixed(1)}</span>${swapChips(slot)}<span class="sal m" title="${isC ? TIP.cptSal : TIP.flexSal}">${money(isC ? p.cptSalary : p.salary)}</span></span></span>
 <span class="sal d" title="${isC ? TIP.cptSal : TIP.flexSal}">${money(isC ? p.cptSalary : p.salary)}</span>
 <button class="x" data-remove="${slot}" title="Remove">×</button></div>`
 }
@@ -3034,7 +3302,7 @@ function needsHtml(list) {
     const p = S.byId.get(w.id); if (!p) return ''
     const top = 100 - w.pctlOfThat
     const col = top <= 5 ? 'bad' : top <= 20 ? 'gold' : 'good'
-    return `<tr title="${TIP.needs}"><td><b>${esc(p.name)}</b><span class="mu">${matchupFor(p, S.meta)}${w.slot === 'cpt' ? ' · CPT' : ''}</span></td><td>${w.avgWhenWinning.toFixed(1)}<span class="mu">pts</span></td><td class="${col}">top ${top.toFixed(0)}%</td></tr>`
+    return `<tr title="${TIP.needs}"><td><b>${esc(p.name)}</b><span class="mu">${teamTag(p)}${w.slot === 'cpt' ? ' · CPT' : ''}</span></td><td>${w.avgWhenWinning.toFixed(1)}<span class="mu">pts</span></td><td class="${col}">top ${top.toFixed(0)}%</td></tr>`
   }).join('')
 }
 
@@ -3054,8 +3322,8 @@ function renderLower(a) {
 function swapOptHtml(slot, o) {
   const p = S.byId.get(o.id); if (!p) return ''
   const base = S.analysis && S.analysis.ev ? S.analysis.ev.roi : null
-  return `<button class="opt" data-slot="${slot}" data-id="${o.id}" title="Swap in ${esc(p.name)} (${matchupFor(p, S.meta)}): ${roiFromTo(base, o)}; copies ${signed(o.deltaCopies, 2)}; salary ${signedMoney(o.deltaSalary)}${o.approx ? '; approximate in this contest size' : ''}">
-<span class="n"><b>${esc(p.name)}</b><span class="mu">${matchupFor(p, S.meta)}</span></span>
+  return `<button class="opt" data-slot="${slot}" data-id="${o.id}" title="Swap in ${esc(p.name)}: ${roiFromTo(base, o)}; copies ${signed(o.deltaCopies, 2)}; salary ${signedMoney(o.deltaSalary)}${o.approx ? '; approximate in this contest size' : ''}">
+<span class="n"><b>${esc(p.name)}</b><span class="mu">${teamTag(p)}</span></span>
 <span class="d ev ${cls(o.deltaEv)}" title="${TIP.dEv} ${roiFromTo(base, o)}.">${roiPts(o.deltaEv)}</span>
 <span class="d ${cls(-o.deltaCopies)}" title="${TIP.dCopies}">${signed(o.deltaCopies, 1)}</span>
 <span class="d muted" title="${TIP.dSal}">${signedMoney(o.deltaSalary)}</span></button>`
