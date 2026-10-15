@@ -773,7 +773,6 @@ select.btn { padding: 0 6px; }
 .cl-view .cl-mklg { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 4px 10px 8px; font-size: 11px; color: var(--muted); }
 .cl-view .cl-mklg[hidden] { display: none; }
 .cl-view .cl-mklg-i { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; cursor: help; }
-.cl-view .lineup .foot .split { width: auto; flex: none; max-width: 100%; }
 .cl-view .lineup .foot .msg { flex: 1 1 120px; }
 /* the remove button stays visible on the desktop (Showdown keeps its hover-only one) */
 .cl-view .slot.filled .x { opacity: 1; color: var(--text); border-color: color-mix(in srgb, var(--text) 35%, transparent); }
@@ -3179,6 +3178,9 @@ function prepare(players, inField) {
 // instead of 1 (each player weight times e^(t (salary - S/9)), the window weights times e^(-t (s - S))):
 // an identity, the same totals, with t at the saddle point where the tilted rosters' mean salary is the cap.
 function exactTotals(st, w, v, cells = null) {
+  // A non-finite weight is bad input, not an empty field: named before any total is taken.
+  for (let i = 0; i < st.n; i++) if (st.kind[i] >= 0 && !Number.isFinite(w[i])) throw new Error(`field: weight not finite for player index ${i} (${w[i]})`);
+  for (let bi = 0; bi < NBUILD; bi++) if (!Number.isFinite(v[bi])) throw new Error(`field: build weight not finite for build index ${bi} (${v[bi]})`);
   return tiltedTotals(st, w, v, cells, saddleTilt(st, w, v), false);
 }
 
@@ -3241,6 +3243,7 @@ function checkTotals(st, m, b, cellMass, t) {
   if (Math.abs(sums[4] - 100) > SUM_TOL) lost(`DST shares sum to ${sums[4]}`);
   if (Math.abs(sums.flex - 700) > SUM_TOL) lost(`RB/WR/TE shares sum to ${sums.flex}`);
   if (Math.abs(bs - 100) > SUM_TOL) lost(`build shares sum to ${bs}`);
+  // Defensive: rounding loss is caught above by the player and build checks; no realistic input reaches this.
   if (cellMass) {
     let cs = 0;
     for (let q = 0; q < cellMass.length; q++) {
@@ -8019,17 +8022,8 @@ function clSlotHtml(slot, marks) {
   // No position chip on a slot: the label says his position, the flex slot's too. Row tinted in the player's team colour.
   return `<div class="slot filled pos-${p.pos}${sel}" data-slot="${slot}" draggable="true" style="--tc:${esc(teamColor(p.team, 'primary', as))}" title="${esc(playerTitle(p, as))}${mk ? esc('\n' + mk.tip.join('\n')) : ''}\nClick to select this slot (the next pool click replaces him); drag to move; Delete removes him">${lab}
 ${avatarFor(p, 44, as)}
-<span class="who"><span class="nm">${esc(p.name)}${p.injury ? '<i class="inj"></i>' : ''}${p.status === 'OUT' ? ' <span class="outtag">OUT</span>' : ''}</span><span class="sub">${teamTag(p, as)}${clOppTag(p)}${clOwnTag(p)}<span class="pts" title="Projection (average) / ceiling">${clFix(p.projection, 1)} <span class="dim">/</span> ${clFix(p.ceiling, 1)}</span><span class="sal m">${money(p.salary)}</span></span></span>
+<span class="who"><span class="nm">${esc(p.name)}${p.injury ? '<i class="inj"></i>' : ''}${p.status === 'OUT' ? ' <span class="outtag">OUT</span>' : ''}</span><span class="sub">${teamTag(p, as)}${clOppTag(p)}${clOwnTag(p)}<span class="sal m">${money(p.salary)}</span></span></span>
 <span class="sal d" title="DraftKings salary">${money(p.salary)}</span><button class="x" data-remove="${slot}" title="Remove">×</button></div>`
-}
-
-// "QB + 2 (DET) · bring-back 1 (ARI) · 4 games": describes the lineup, decides nothing.
-function clStructure() {
-  const qb = clPlayerAt('QB'); if (!qb) return ''
-  const ids = CL_SLOTS.filter(s => s !== 'QB' && s !== 'DST').map(clPlayerAt).filter(Boolean)
-  const mates = ids.filter(p => p.team === qb.team).length, back = ids.filter(p => p.team === qb.opp).length
-  const games = new Set(clIds().map(id => clS.byId.get(id).game)).size
-  return `QB + ${mates} (${qb.team}) · bring-back ${back} (${qb.opp}) · ${games} game${games === 1 ? '' : 's'}`
 }
 
 function clRenderLineup(v) {
@@ -8043,7 +8037,6 @@ function clRenderLineup(v) {
   sal.querySelector('.bar i').style.width = Math.min(100, v.salary / CL_CAP * 100) + '%'
   sal.querySelector('.spent').textContent = money(v.salary) + ' spent'
   sal.querySelector('.left').textContent = v.salary > CL_CAP ? money(v.salary - CL_CAP) + ' over' : money(v.salaryLeft) + ' left'
-  clEl('cl-split').innerHTML = `<span class="splab">${clStructure() || 'structure'}</span>`
   const msg = clEl('cl-lmsg')
   if (clS.flash) { msg.textContent = clS.flash; msg.className = 'msg bad'; clS.flash = null }
   else if (!clCount()) { msg.textContent = 'Click a player to add him; he fills the first open slot he can play'; msg.className = 'msg' }
@@ -8058,7 +8051,7 @@ function clLineupHtml() {
 <h2>Lineup <span class="dim">· DK Classic · $50,000 cap</span><span class="right"><button class="btn sm" id="cl-undo" title="Undo (Ctrl+Z)">↶ undo</button> <button class="btn sm" id="cl-redo" title="Redo (Ctrl+Y)">↷</button></span></h2>
 <div class="slots" id="cl-slots"></div>
 <div class="salary" id="cl-salary"><span class="spent" title="Salary spent">$0 spent</span><span class="bar"><i data-inv="lineup-card"></i></span><span class="left" title="Salary left under the $50,000 cap">$50,000 left</span></div>
-<div class="foot"><span class="split" id="cl-split" title="Structure: the QB's stack, bring-back from the opposing team, and the number of games"></span><span class="msg" id="cl-lmsg"></span><button class="btn sm" id="cl-clear" title="Empty every slot (Undo available)">Clear</button></div>
+<div class="foot"><span class="msg" id="cl-lmsg"></span><button class="btn sm" id="cl-clear" title="Empty every slot (Undo available)">Clear</button></div>
 <div class="cl-mklg" id="cl-mklg" hidden></div>
 </div>`
 }
